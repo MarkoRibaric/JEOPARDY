@@ -1,0 +1,113 @@
+body {
+  background-color: #0F4D92;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.top-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+#startGameButton {
+  background-color: #08316D;
+  color: yellow;
+  font-weight: bold;
+  border: 2px solid gray;
+  padding: 20px 40px;
+  font-size: 24px;
+  border-radius: 20px;
+}
+
+.main-container {
+  display: flex;
+  width: 100%;
+}
+
+.grid-container {
+  width: 66.67%;
+  padding-right: 20px;
+  margin-right: 20px;
+}
+
+.column-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.column-container button {
+  flex-grow: 1;
+  width: calc(16.67% - 10px); /* Adjust the width and spacing as desired */
+  margin-right: 10px;
+  height: 50px; /* Same height as the grid cells */
+  background-color: #08316D; /* Lighter background color */
+  color: yellow; /* Yellow letters */
+  font-weight: bold;
+  border: 2px solid gray; /* Grey outline */
+  border-radius: 5px;
+  font-size: 16px; /* Adjust the font size as desired */
+}
+
+.column-container button:hover {
+  background-color: #EFEFEF; /* Lighter background color on hover */
+}
+
+
+.sidebar-container {
+  width: 33.33%;
+  padding-left: 20px;
+}
+
+.select-container {
+  margin-bottom: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td {
+  border: 2px solid black; /* Thicker grid lines */
+  width: 16.67%;
+  height: 50px;
+  text-align: center;
+}
+
+
+td.theme-name {
+  text-transform: uppercase; /* Theme names in all capital letters */
+  color: white; /* White text color */
+  font-weight: bold;
+}
+
+td .question {
+  margin-bottom: 5px;
+  color: white; /* White question text color */
+  font-weight: bold;
+  align-self: flex-start;
+}
+
+td .answer {
+  color: darkgoldenrod; /* Red answer text color */
+  font-weight: bold;
+  font-size: 1.2em; /* Larger font size for the answer */
+}
