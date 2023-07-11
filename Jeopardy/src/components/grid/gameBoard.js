@@ -8,7 +8,6 @@ export const gridStatusEnum = {
 }
 
 export default function GameBoard(props) {
-
     const [gridValues, setGridValues] = useState(() => {
         const storedData = localStorage.getItem('gridData');
         if (storedData) {
@@ -16,8 +15,6 @@ export default function GameBoard(props) {
         }
         return Array.from(Array(6), () => Array(6).fill(''));
       });
-    
-      
     const [gridStatus, setGridStatus] = useState(gridStatusEnum.CONFIGURATION);
     
 
@@ -25,10 +22,9 @@ export default function GameBoard(props) {
     useEffect(() => {
         localStorage.setItem('gridData', JSON.stringify(gridValues));
     }, [gridValues]);
-
     return (<>
-        {gridStatus === gridStatusEnum.CONFIGURATION && <GameConfigurationGrid gridValues={gridValues} setGridValues={setGridValues} setGridStatus={setGridStatus} handleGoToEditPage= {props.handleGoToEditPage}></GameConfigurationGrid>}
-        {gridStatus === gridStatusEnum.PLAY && <PlayGrid gridValues={gridValues} setGridStatus={setGridStatus} ></PlayGrid>}
+        {gridStatus === gridStatusEnum.CONFIGURATION && <GameConfigurationGrid gridValues={gridValues} setGridValues={setGridValues} setGridStatus={setGridStatus} handleGoToEditPage= {props.handleGoToEditPage} user={props.user}></GameConfigurationGrid>}
+        {gridStatus === gridStatusEnum.PLAY && <PlayGrid gridValues={gridValues} setGridStatus={setGridStatus} user={props.user}></PlayGrid>}
         </>
     )
 }

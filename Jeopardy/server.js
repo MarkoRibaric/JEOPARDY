@@ -1,10 +1,75 @@
 const express = require('express');
 const app = express();
+const cors = require('cors')
+const bcrypt = require('bcryptjs');
+
+app.use(cors())
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
+
+
+
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('quiz.db');
+const credentialsdb = new sqlite3.Database('credentials.db');
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 let sentThemes = {};
+app.post('/validatePassword', (req, res) => {
+  let { username, password } = req.body;
+  username = username.toLowerCase(); // Convert username to lowercase
+
+  credentialsdb.get(`SELECT * FROM credentials WHERE LOWER(username) = ?`, [username], (err, row) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send({ validation: false, error: 'Internal Server Error' });
+      return;
+    }
+    if (row) {
+      const storedPassword = row.password;
+      bcrypt.compare(password, storedPassword, (compareErr, isMatch) => {
+        if (compareErr) {
+          console.error(compareErr);
+          res.status(500).send({ validation: false, error: 'Internal Server Error' });
+          return;
+        }
+        if (isMatch) {
+          res.send({ validation: true });
+        } else {
+          res.send({ validation: false });
+        }
+      });
+    } else {
+      res.send({ validation: false });
+    }
+  });
+});
+
+
+app.post('/registerUser', (req, res) => {
+  const { username, password } = req.body;
+  bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
+    if (hashErr) {
+      console.error(hashErr);
+      res.status(500).send({ error: 'Internal Server Error' });
+      return;
+    }
+    credentialsdb.run('INSERT INTO credentials (username, password) VALUES (?, ?)', [username, hashedPassword], (insertErr) => {
+      if (insertErr) {
+        console.error(insertErr);
+        res.status(500).send({ error: 'Internal Server Error' });
+        return;
+      }
+      res.send({ success: true });
+    });
+  });
+});
+
+
 
 
 

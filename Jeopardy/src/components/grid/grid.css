@@ -107,7 +107,7 @@ td .question {
 }
 
 td .answer {
-  color: darkgoldenrod; /* Red answer text color */
+  color: darkgoldenrod;
   font-weight: bold;
   font-size: 1.2em; /* Larger font size for the answer */
 }
