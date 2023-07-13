@@ -2,6 +2,15 @@ const express = require('express');
 const app = express();
 const cors = require('cors')
 const bcrypt = require('bcryptjs');
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000"
+  }
+});
+
 
 app.use(cors())
 app.use((req, res, next) => {
@@ -340,8 +349,21 @@ app.get('/api/themes/:selectedThemeId', (req, res) => {
   });
 });
 
+app.get('/play/:roomCode', (req, res) => {
+  const roomCode = req.params.roomCode;
+});
 
-
-app.listen(5000, () => {
+server.listen(5000, () => {
   console.log("Server started on port 5000");
 });
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.on('JoinRoom', (data) => {
+    // Logic here
+    console.log(`New user joined ${data.roomCode}`);
+    socket.join(data.roomCode);
+    io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
+  })
+});
+

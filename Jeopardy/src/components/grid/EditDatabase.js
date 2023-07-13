@@ -24,7 +24,7 @@ export default function EditDatabase(props) {
   ]);
   
   function fetchData() {
-    fetch(`/api/all?id=${props.id}`)
+    fetch(`http://localhost:5000/api/all?id=${props.id}`)
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
@@ -69,7 +69,7 @@ export default function EditDatabase(props) {
       theme: themeEntry,
       entries: entriesToAdd,
     };
-    fetch("/api/addToDatabase", {
+    fetch("http://localhost:5000/api/addToDatabase", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,7 +101,7 @@ export default function EditDatabase(props) {
       return;
     }
 
-    fetch(`/api/deleteItem/${itemId}`, {
+    fetch(`http://localhost:5000/api/deleteItem/${itemId}`, {
       method: "DELETE",
     })
       .then((response) => response.json())

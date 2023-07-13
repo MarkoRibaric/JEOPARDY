@@ -18,7 +18,7 @@
     });
   
     useEffect(() => {
-      fetch('api/themes')
+      fetch('http://localhost:5000/api/themes')
         .then(response => response.json())
         .then(data => {
           setThemes(data);
@@ -34,7 +34,7 @@
       if (selectedThemeId) {
         setSelectedThemeId(selectedThemeId);
   
-        fetch(`api/themes/${selectedThemeId}`)
+        fetch(`http://localhost:5000/api/themes/${selectedThemeId}`)
           .then(response => response.json())
           .then(data => {
             const { questions } = data;
@@ -96,7 +96,7 @@
 
     function GetRandomColumnQuestion(columnIndex) {
       const firstColumnValues = props.gridValues.map(row => row[0]);
-      fetch(`api?themes=${JSON.stringify(firstColumnValues)}`)
+      fetch(`http://localhost:5000/api?themes=${JSON.stringify(firstColumnValues)}`)
         .then(response => response.json())
         .then(data => {
           const { theme, questions } = data;
