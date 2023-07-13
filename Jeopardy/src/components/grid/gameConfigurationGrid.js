@@ -145,7 +145,7 @@
             <button id="startGameButton" onClick={() => props.setGridStatus(gridStatusEnum.PLAY)}>Start game</button>
           </div>
           <div>
-            Logged in user: {props.user}
+            Logged in user: {props.user} {props.id}
           </div>
         </div>
         <div className="main-container">

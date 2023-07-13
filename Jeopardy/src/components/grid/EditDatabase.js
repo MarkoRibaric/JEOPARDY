@@ -16,15 +16,15 @@ export default function EditDatabase(props) {
   const [data, setData] = useState({ themes: [], questions: [] });
   const [themeEntry, setThemeEntry] = useState("");
   const [qaEntries, setQAEntries] = useState([
-    { question: "", answer: "", difficulty: 1 },
-    { question: "", answer: "", difficulty: 1 },
-    { question: "", answer: "", difficulty: 1 },
-    { question: "", answer: "", difficulty: 1 },
-    { question: "", answer: "", difficulty: 1 },
+    { question: "", answer: "", difficulty: 1, id: props.id},
+    { question: "", answer: "", difficulty: 2, id: props.id},
+    { question: "", answer: "", difficulty: 3, id: props.id},
+    { question: "", answer: "", difficulty: 4, id: props.id},
+    { question: "", answer: "", difficulty: 5, id: props.id}
   ]);
-
+  
   function fetchData() {
-    fetch("/api/all")
+    fetch(`/api/all?id=${props.id}`)
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
@@ -69,7 +69,6 @@ export default function EditDatabase(props) {
       theme: themeEntry,
       entries: entriesToAdd,
     };
-
     fetch("/api/addToDatabase", {
       method: "POST",
       headers: {
@@ -82,11 +81,11 @@ export default function EditDatabase(props) {
         console.log("Data added to database:", data);
         setThemeEntry("");
         setQAEntries([
-          { question: "", answer: "", difficulty: 1 },
-          { question: "", answer: "", difficulty: 1 },
-          { question: "", answer: "", difficulty: 1 },
-          { question: "", answer: "", difficulty: 1 },
-          { question: "", answer: "", difficulty: 1 },
+          { question: "", answer: "", difficulty: 1, id: props.id},
+          { question: "", answer: "", difficulty: 2, id: props.id},
+          { question: "", answer: "", difficulty: 3, id: props.id},
+          { question: "", answer: "", difficulty: 4, id: props.id},
+          { question: "", answer: "", difficulty: 5, id: props.id}
         ]);
         fetchData();
       })
@@ -117,6 +116,9 @@ export default function EditDatabase(props) {
 
   return (
     <>
+    <div>
+            Logged in user: {props.user} {props.id}
+          </div>
       <div>
         <button onClick={() => props.handleGoToIndexPage()}>Go to configuration page</button>
         <button onClick={handleRefresh}>Refresh Database</button>
@@ -165,6 +167,7 @@ export default function EditDatabase(props) {
               <strong>Question:</strong> {item.question} &nbsp;&nbsp;&nbsp;&nbsp;
               <strong>Answer:</strong> {item.answer} &nbsp;&nbsp;&nbsp;&nbsp;
               <strong>Difficulty:</strong> {item.difficulty}
+              <strong>User:</strong> {item.user}
               <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
             </li>
           ))}

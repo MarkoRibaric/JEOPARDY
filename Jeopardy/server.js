@@ -15,15 +15,15 @@ app.use((req, res, next) => {
 
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('quiz.db');
-const credentialsdb = new sqlite3.Database('credentials.db');
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 let sentThemes = {};
+
 app.post('/validatePassword', (req, res) => {
   let { username, password } = req.body;
   username = username.toLowerCase(); // Convert username to lowercase
 
-  credentialsdb.get(`SELECT * FROM credentials WHERE LOWER(username) = ?`, [username], (err, row) => {
+  db.get(`SELECT id, password FROM users WHERE LOWER(username) = ?`, [username], (err, row) => {
     if (err) {
       console.error(err);
       res.status(500).send({ validation: false, error: 'Internal Server Error' });
@@ -31,6 +31,8 @@ app.post('/validatePassword', (req, res) => {
     }
     if (row) {
       const storedPassword = row.password;
+      const userId = row.id; // Retrieve the user ID from the row
+
       bcrypt.compare(password, storedPassword, (compareErr, isMatch) => {
         if (compareErr) {
           console.error(compareErr);
@@ -38,7 +40,7 @@ app.post('/validatePassword', (req, res) => {
           return;
         }
         if (isMatch) {
-          res.send({ validation: true });
+          res.send({ validation: true, userId }); // Send the user ID along with the validation response
         } else {
           res.send({ validation: false });
         }
@@ -49,26 +51,40 @@ app.post('/validatePassword', (req, res) => {
   });
 });
 
-
 app.post('/registerUser', (req, res) => {
   const { username, password } = req.body;
-  bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
-    if (hashErr) {
-      console.error(hashErr);
+
+
+  db.get('SELECT * FROM users WHERE username = ?', [username], (selectErr, row) => {
+    if (selectErr) {
+      console.error(selectErr);
       res.status(500).send({ error: 'Internal Server Error' });
       return;
     }
-    credentialsdb.run('INSERT INTO credentials (username, password) VALUES (?, ?)', [username, hashedPassword], (insertErr) => {
-      if (insertErr) {
-        console.error(insertErr);
+
+    if (row) {
+      res.status(400).send({ error: 'Username already exists' });
+      return;
+    }
+
+    bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
+      if (hashErr) {
+        console.error(hashErr);
         res.status(500).send({ error: 'Internal Server Error' });
         return;
       }
-      res.send({ success: true });
+
+      db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (insertErr) => {
+        if (insertErr) {
+          console.error(insertErr);
+          res.status(500).send({ error: 'Internal Server Error' });
+          return;
+        }
+        res.send({ success: true });
+      });
     });
   });
 });
-
 
 
 
@@ -187,28 +203,34 @@ app.get('/api/all', (req, res) => {
     questions: []
   };
 
+  const userId = req.query.id; // Access the ID from the query parameter
+
   db.all('SELECT * FROM themes', (err, themeRows) => {
     if (err) {
       console.error(err.message);
       res.status(500).json({ error: 'Internal server error' });
       return;
     }
-    
+
     response.themes = themeRows;
 
-  db.all('SELECT * FROM questions', (err, questionRows) => {
-    if (err) {
-      console.error(err.message);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-    
-    response.questions = questionRows;
+    let query = 'SELECT * FROM questions WHERE user = ? OR user IS NULL';
+    db.all(query, [userId], (err, questionRows) => {
+      if (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
 
-    res.json(response);
-  });
+      response.questions = questionRows;
+
+      res.json(response);
+    });
   });
 });
+
+
+
 
 
 app.post('/api/addToDatabase', (req, res) => {
@@ -240,11 +262,11 @@ app.post('/api/addToDatabase', (req, res) => {
   });
 
   function insertQuestions(themeId, entries) {
-    const insertQuery = 'INSERT INTO questions (theme_id, question, answer, difficulty) VALUES (?, ?, ?, ?)';
+    const insertQuery = 'INSERT INTO questions (theme_id, question, answer, difficulty, user) VALUES (?, ?, ?, ?, ?)';
 
     entries.forEach((entry) => {
-      const { question, answer, difficulty } = entry;
-      db.run(insertQuery, [themeId, question, answer, difficulty], (err) => {
+      const { question, answer, difficulty, id} = entry;
+      db.run(insertQuery, [themeId, question, answer, difficulty, id], (err) => {
         if (err) {
           console.error('Error inserting data into the database:', err);
         }
@@ -254,6 +276,7 @@ app.post('/api/addToDatabase', (req, res) => {
     res.json({ message: 'Data added to the database successfully' });
   }
 });
+
 
 app.delete("/api/deleteItem/:id", (req, res) => {
   const itemId = req.params.id;

@@ -23,8 +23,8 @@ export default function GameBoard(props) {
         localStorage.setItem('gridData', JSON.stringify(gridValues));
     }, [gridValues]);
     return (<>
-        {gridStatus === gridStatusEnum.CONFIGURATION && <GameConfigurationGrid gridValues={gridValues} setGridValues={setGridValues} setGridStatus={setGridStatus} handleGoToEditPage= {props.handleGoToEditPage} user={props.user}></GameConfigurationGrid>}
-        {gridStatus === gridStatusEnum.PLAY && <PlayGrid gridValues={gridValues} setGridStatus={setGridStatus} user={props.user}></PlayGrid>}
+        {gridStatus === gridStatusEnum.CONFIGURATION && <GameConfigurationGrid gridValues={gridValues} setGridValues={setGridValues} setGridStatus={setGridStatus} handleGoToEditPage= {props.handleGoToEditPage} user={props.user} id={props.id}></GameConfigurationGrid>}
+        {gridStatus === gridStatusEnum.PLAY && <PlayGrid gridValues={gridValues} setGridStatus={setGridStatus} user={props.user} id={props.id}></PlayGrid>}
         </>
     )
 }

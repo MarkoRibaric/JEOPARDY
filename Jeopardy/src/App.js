@@ -6,6 +6,7 @@ import Login from './components/Login/Login';
 
 function App() {
     const [currentloggedinuser, setCurrentLoggedInUser] = useState("");
+    const [currentloggedinuserID, setCurrentLoggedInUserID] = useState(0);
     const pages = {
         LOGIN : 1,
         INDEX: 2,
@@ -16,8 +17,9 @@ function App() {
         setPageState(pages.EDIT);
     };
 
-    const handleGoToIndexPage = (user) => {
+    const handleGoToIndexPage = (user, id) => {
         setCurrentLoggedInUser(user);
+        setCurrentLoggedInUserID(id);
         setPageState(pages.INDEX);
       };
 
@@ -25,8 +27,8 @@ function App() {
         <>
         <div className="App">
         {pageState === pages.LOGIN && <Login handleGoToIndexPage={handleGoToIndexPage} setCurrentLoggedInUser={setCurrentLoggedInUser} />}
-        {pageState === pages.INDEX && <GameBoard handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} />}
-        {pageState === pages.EDIT && <EditDatabase handleGoToIndexPage={handleGoToIndexPage} />}
+        {pageState === pages.INDEX && <GameBoard handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} id={currentloggedinuserID}/>}
+        {pageState === pages.EDIT && <EditDatabase handleGoToIndexPage={handleGoToIndexPage} user={currentloggedinuser} id={currentloggedinuserID}/>}
       </div>
         </>
     );
