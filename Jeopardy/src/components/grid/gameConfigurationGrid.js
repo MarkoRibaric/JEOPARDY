@@ -125,6 +125,8 @@
             return updatedGridValues;
           });
         });
+        console.log("test")
+        console.log(props.gridValues)
     }
     
 
