@@ -5,6 +5,10 @@ const bcrypt = require('bcryptjs');
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const secretKey = crypto.randomBytes(64).toString('hex');
+
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000"
@@ -19,7 +23,9 @@ app.use((req, res, next) => {
   next();
 });
 
-
+function generateToken(userId) {
+  return jwt.sign({ userId: userId }, secretKey, { expiresIn: '24h' });
+}
 
 
 const sqlite3 = require('sqlite3').verbose();
@@ -38,6 +44,7 @@ app.post('/validatePassword', (req, res) => {
       res.status(500).send({ validation: false, error: 'Internal Server Error' });
       return;
     }
+
     if (row) {
       const storedPassword = row.password;
       const userId = row.id; // Retrieve the user ID from the row
@@ -48,8 +55,19 @@ app.post('/validatePassword', (req, res) => {
           res.status(500).send({ validation: false, error: 'Internal Server Error' });
           return;
         }
+
         if (isMatch) {
-          res.send({ validation: true, userId }); // Send the user ID along with the validation response
+          const token = generateToken(userId);
+
+          db.run('UPDATE users SET token = ? WHERE id = ?', [token, userId], (updateErr) => {
+            if (updateErr) {
+              console.error(updateErr);
+              res.status(500).send({ validation: false, error: 'Internal Server Error' });
+              return;
+            }
+
+            res.send({ validation: true, userId, token });
+          });
         } else {
           res.send({ validation: false });
         }
@@ -60,108 +78,128 @@ app.post('/validatePassword', (req, res) => {
   });
 });
 
+
 app.post('/registerUser', (req, res) => {
   const { username, password } = req.body;
+  function generateRandomId() {
+    return Math.floor(1000000 + Math.random() * 9000000);
+  }
 
-
-  db.get('SELECT * FROM users WHERE username = ?', [username], (selectErr, row) => {
-    if (selectErr) {
-      console.error(selectErr);
-      res.status(500).send({ error: 'Internal Server Error' });
-      return;
-    }
-
-    if (row) {
-      res.status(400).send({ error: 'Username already exists' });
-      return;
-    }
-
-    bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
-      if (hashErr) {
-        console.error(hashErr);
+  function RegisterUser(userId) {
+    db.get('SELECT * FROM users WHERE id = ?', [userId], (idErr, idRow) => {
+      if (idErr) {
+        console.error(idErr);
         res.status(500).send({ error: 'Internal Server Error' });
         return;
       }
 
-      db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (insertErr) => {
-        if (insertErr) {
-          console.error(insertErr);
-          res.status(500).send({ error: 'Internal Server Error' });
-          return;
-        }
-        res.send({ success: true });
-      });
-    });
-  });
-});
-
-
-
-
-app.get("/api", (req, res) => {
-  const gottenthemes = JSON.parse(req.query.themes);
-  console.log(gottenthemes);
-  const themeNames = gottenthemes.map(theme => `'${theme[0]}'`).join(', ');
-  db.get(`
-    SELECT t.id, t.theme
-    FROM themes t
-    JOIN questions q ON t.id = q.theme_id
-    WHERE t.theme NOT IN (${themeNames})
-    GROUP BY t.id, t.theme
-    HAVING COUNT(DISTINCT q.difficulty) >= 5
-    ORDER BY RANDOM()
-    LIMIT 1
-  `, function(err, row) {
-    if (err) {
-      console.error(err.message);
-      res.status(500).json({"error": "Internal server error"});
-      return;
-    }
-    
-    if (!row) {
-      sentThemes = {};
-      db.all('SELECT * FROM themes', function(err, rows) {
-        if (err) {
-          console.error(err.message);
-          res.status(500).json({"error": "Internal server error"});
-          return;
-        }
-        
-        const randomRow = rows[Math.floor(Math.random() * rows.length)];
-        sentThemes[randomRow.id] = [];
-        fetchQuestionsByTheme(randomRow.id, function(err, questions) {
-          if (err) {
-            console.error(err.message);
-            res.status(500).json({"error": "Internal server error"});
+      if (idRow) {
+        const newUserId = generateRandomId();
+        checkUniqueId(newUserId);
+      } else {
+        bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
+          if (hashErr) {
+            console.error(hashErr);
+            res.status(500).send({ error: 'Internal Server Error' });
             return;
           }
-          
-          const jsonResult = {
-            theme: randomRow.theme,
-            questions: questions
-          };
-          res.json(jsonResult);
+
+          db.run('INSERT INTO users (id, username, password) VALUES (?, ?, ?)', [userId, username, hashedPassword], (insertErr) => {
+            if (insertErr) {
+              console.error(insertErr);
+              res.status(500).send({ error: 'Internal Server Error' });
+              return;
+            }
+            res.send({ success: true });
+          });
         });
-      });
+      }
+    });
+  }
+
+  const userId = generateRandomId();
+  RegisterUser(userId);
+});
+
+
+app.get("/randomcolumn", (req, res) => {
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace("Bearer ", "");
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    sentThemes[row.id] = [];
-    fetchQuestionsByTheme(row.id, function(err, questions) {
+    const userId = decoded.userId;
+
+    const gottenthemes = JSON.parse(req.query.themes);
+    console.log(gottenthemes);
+    const themeNames = gottenthemes.map(theme => `'${theme[0]}'`).join(', ');
+    db.get(`
+      SELECT t.id, t.theme
+      FROM themes t
+      JOIN questions q ON t.id = q.theme_id
+      WHERE t.theme NOT IN (${themeNames})
+        AND (q.user = ? OR q.user IS NULL)
+      GROUP BY t.id, t.theme
+      HAVING COUNT(DISTINCT q.difficulty) >= 5
+      ORDER BY RANDOM()
+      LIMIT 1
+    `, [userId], function(err, row) {
       if (err) {
         console.error(err.message);
-        res.status(500).json({"error": "Internal server error"});
+        res.status(500).json({ error: "Internal server error" });
         return;
       }
-      
-      const jsonResult = {
-        theme: row.theme,
-        questions: questions
-      };
-      res.json(jsonResult);
+
+      if (!row) {
+        sentThemes = {};
+        db.all('SELECT * FROM themes', function(err, rows) {
+          if (err) {
+            console.error(err.message);
+            res.status(500).json({ error: "Internal server error" });
+            return;
+          }
+
+          const randomRow = rows[Math.floor(Math.random() * rows.length)];
+          sentThemes[randomRow.id] = [];
+          fetchQuestionsByTheme(randomRow.id, function(err, questions) {
+            if (err) {
+              console.error(err.message);
+              res.status(500).json({ error: "Internal server error" });
+              return;
+            }
+
+            const jsonResult = {
+              theme: randomRow.theme,
+              questions: questions
+            };
+            res.json(jsonResult);
+          });
+        });
+        return;
+      }
+
+      sentThemes[row.id] = [];
+      fetchQuestionsByTheme(row.id, function(err, questions) {
+        if (err) {
+          console.error(err.message);
+          res.status(500).json({ error: "Internal server error" });
+          return;
+        }
+
+        const jsonResult = {
+          theme: row.theme,
+          questions: questions
+        };
+        res.json(jsonResult);
+      });
     });
   });
 });
+
 
 
 function fetchQuestionsByTheme(themeId, callback) {
@@ -212,32 +250,42 @@ app.get('/api/all', (req, res) => {
     questions: []
   };
 
-  const userId = req.query.id; // Access the ID from the query parameter
+  const token = req.headers.authorization; // Extract the token from the request headers
+  const tokenWithoutBearer = token.replace("Bearer ", ""); // Remove the "Bearer " prefix
 
-  db.all('SELECT * FROM themes', (err, themeRows) => {
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
-      console.error(err.message);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    response.themes = themeRows;
-
-    let query = 'SELECT * FROM questions WHERE user = ? OR user IS NULL';
-    db.all(query, [userId], (err, questionRows) => {
+    const userId = decoded.userId; // Retrieve the user ID from the decoded token
+    console.log(userId)
+    db.all('SELECT * FROM themes', (err, themeRows) => {
       if (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Internal server error' });
         return;
       }
 
-      response.questions = questionRows;
+      response.themes = themeRows;
 
-      res.json(response);
+      let query = 'SELECT * FROM questions WHERE user = ? OR user IS NULL';
+      db.all(query, [userId], (err, questionRows) => {
+        if (err) {
+          console.error(err.message);
+          res.status(500).json({ error: 'Internal server error' });
+          return;
+        }
+
+        response.questions = questionRows;
+
+        res.json(response);
+      });
     });
   });
 });
-
 
 
 
@@ -248,43 +296,51 @@ app.post('/api/addToDatabase', (req, res) => {
     res.status(400).json({ error: 'Invalid data provided' });
     return;
   }
-
-  db.get('SELECT id FROM themes WHERE theme = ?', [theme], (err, row) => {
+  const token = req.headers.authorization; // Extract the token from the request headers
+  const tokenWithoutBearer = token.replace("Bearer ", "");
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
-      console.error('Error checking theme:', err);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = decoded.userId;
+    console.log(userId)
+    db.get('SELECT id FROM themes WHERE theme = ?', [theme], (err, row) => {
+      if (err) {
+        console.error('Error checking theme:', err);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
 
-    if (!row) {
-      db.run('INSERT INTO themes (theme) VALUES (?)', [theme], function(err) {
-        if (err) {
-          console.error('Error inserting theme:', err);
-          res.status(500).json({ error: 'Internal server error' });
-          return;
-        }
-        insertQuestions(this.lastID, entries); // Insert the questions into the questions table
-      });
-    } else {
-      insertQuestions(row.id, entries); // Insert the questions into the questions table
-    }
+      if (!row) {
+        db.run('INSERT INTO themes (theme) VALUES (?)', [theme], function(err) {
+          if (err) {
+            console.error('Error inserting theme:', err);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+          }
+          insertQuestions(this.lastID, entries, userId); // Insert the questions into the questions table
+        });
+      } else {
+        insertQuestions(row.id, entries, userId); // Insert the questions into the questions table
+      }
+    });
   });
-
-  function insertQuestions(themeId, entries) {
+  function insertQuestions(themeId, entries, userId) {
     const insertQuery = 'INSERT INTO questions (theme_id, question, answer, difficulty, user) VALUES (?, ?, ?, ?, ?)';
-
     entries.forEach((entry) => {
-      const { question, answer, difficulty, id} = entry;
-      db.run(insertQuery, [themeId, question, answer, difficulty, id], (err) => {
+      const { question, answer, difficulty } = entry;
+      db.run(insertQuery, [themeId, question, answer, difficulty, userId], (err) => {
         if (err) {
           console.error('Error inserting data into the database:', err);
         }
       });
     });
-
     res.json({ message: 'Data added to the database successfully' });
   }
 });
+
 
 
 app.delete("/api/deleteItem/:id", (req, res) => {
@@ -304,47 +360,85 @@ app.delete("/api/deleteItem/:id", (req, res) => {
 
 
 app.get('/api/themes', (req, res) => {
-  db.all('SELECT * FROM themes', (err, rows) => {
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace('Bearer ', '');
+
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
-      console.error(err.message);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-    
-    res.json(rows);
-  });
-});
-
-
-app.get('/api/themes/:selectedThemeId', (req, res) => {
-  const selectedThemeId = req.params.selectedThemeId;
-
-  db.get('SELECT * FROM themes WHERE id = ?', [selectedThemeId], (err, row) => {
-    if (err) {
-      console.error(err.message);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    if (!row) {
-      res.status(404).json({ error: 'Theme not found' });
-      return;
-    }
+    const userId = decoded.userId;
 
-    db.all('SELECT * FROM questions WHERE theme_id = ?', [selectedThemeId], (err, questionRows) => {
+    const query = `
+      SELECT t.id, t.theme
+      FROM themes t
+      JOIN questions q ON t.id = q.theme_id
+      WHERE q.user = ? OR q.user IS NULL
+      GROUP BY t.id, t.theme
+      HAVING COUNT(q.id) > 0
+    `;
+    db.all(query, [userId], (err, rows) => {
       if (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Internal server error' });
         return;
       }
 
-      const themeDetails = {
-        id: row.id,
-        theme: row.theme,
-        questions: questionRows
-      };
+      res.json(rows);
+    });
+  });
+});
 
-      res.json(themeDetails);
+
+
+app.get('/api/themes/:selectedThemeId', (req, res) => {
+  const selectedThemeId = req.params.selectedThemeId;
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace('Bearer ', '');
+
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const userId = decoded.userId;
+
+    db.get('SELECT * FROM themes WHERE id = ?', [selectedThemeId], (err, row) => {
+      if (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+
+      if (!row) {
+        res.status(404).json({ error: 'Theme not found' });
+        return;
+      }
+
+      db.all(
+        'SELECT * FROM questions WHERE theme_id = ? AND (user = ? OR user IS NULL)',
+        [selectedThemeId, userId],
+        (err, questionRows) => {
+          if (err) {
+            console.error(err.message);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+          }
+
+          const themeDetails = {
+            id: row.id,
+            theme: row.theme,
+            questions: questionRows
+          };
+
+          res.json(themeDetails);
+        }
+      );
     });
   });
 });

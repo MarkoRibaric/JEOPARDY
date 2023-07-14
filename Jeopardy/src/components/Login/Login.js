@@ -5,7 +5,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 export default function Login(props) {
     const onFinish = values => {
-        const { username, password } = values;
+        const { username, password} = values;
         fetch('http://localhost:5000/validatePassword', {
             method: 'POST',
             headers: {
@@ -17,8 +17,9 @@ export default function Login(props) {
             .then(data => {
                 if (data.validation) {
                     alert('Your password is correct');
-                    const userId = data.userId; // Retrieve the user ID from the response data
-                    props.handleGoToIndexPage(username, userId); // Pass the username and user ID to the handler function
+                    const userId = data.userId; 
+                    const token = data.token;
+                    props.handleGoToIndexPage(username, userId, token);
                 } else {
                     alert('Your password is incorrect');
                 }

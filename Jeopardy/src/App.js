@@ -8,6 +8,7 @@ import { socket } from './socket';
 function App() {
     const [currentloggedinuser, setCurrentLoggedInUser] = useState("");
     const [currentloggedinuserID, setCurrentLoggedInUserID] = useState(0);
+    const [token, settoken] = useState("");
     const pages = {
         LOGIN : 1,
         INDEX: 2,
@@ -18,9 +19,10 @@ function App() {
         setPageState(pages.EDIT);
     };
 
-    const handleGoToIndexPage = (user, id) => {
+    const handleGoToIndexPage = (user, id, token) => {
         setCurrentLoggedInUser(user);
         setCurrentLoggedInUserID(id);
+        settoken(token);
         setPageState(pages.INDEX);
     };
 
@@ -59,8 +61,8 @@ function App() {
         <>
         <div className="App">
         {pageState === pages.LOGIN && <Login handleGoToIndexPage={handleGoToIndexPage} setCurrentLoggedInUser={setCurrentLoggedInUser} />}
-        {pageState === pages.INDEX && <GameBoard handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} id={currentloggedinuserID}/>}
-        {pageState === pages.EDIT && <EditDatabase handleGoToIndexPage={handleGoToIndexPage} user={currentloggedinuser} id={currentloggedinuserID}/>}
+        {pageState === pages.INDEX && <GameBoard handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/>}
+        {pageState === pages.EDIT && <EditDatabase handleGoToIndexPage={handleGoToIndexPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/>}
         <button onClick={joinRoom}>Test join room</button>
 
       </div>

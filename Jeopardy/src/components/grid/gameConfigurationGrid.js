@@ -16,9 +16,13 @@
       4: [],
       5: []
     });
-  
+    
     useEffect(() => {
-      fetch('http://localhost:5000/api/themes')
+      fetch('http://localhost:5000/api/themes', {
+        headers: {
+          Authorization: `Bearer ${props.token}` // Add the token to the Authorization header
+        }
+      })
         .then(response => response.json())
         .then(data => {
           setThemes(data);
@@ -27,6 +31,7 @@
           console.error('Error fetching themes:', error);
         });
     }, []);
+    
   
     function handleThemeChange(event) {
       const selectedThemeId = event.target.value;
@@ -34,11 +39,15 @@
       if (selectedThemeId) {
         setSelectedThemeId(selectedThemeId);
   
-        fetch(`http://localhost:5000/api/themes/${selectedThemeId}`)
+        fetch(`http://localhost:5000/api/themes/${selectedThemeId}`, {
+          headers: {
+            Authorization: `Bearer ${props.token}`
+          }
+        })
           .then(response => response.json())
           .then(data => {
             const { questions } = data;
-  
+
             const updatedQuestionsByDifficulty = {
               1: [],
               2: [],
@@ -56,6 +65,7 @@
           .catch(error => {
             console.error('Error fetching theme details:', error);
           });
+
       } else {
         setSelectedThemeId('');
         setQuestionsByDifficulty({
@@ -93,22 +103,30 @@
       }
     }
     
-
     function GetRandomColumnQuestion(columnIndex) {
       const firstColumnValues = props.gridValues.map(row => row[0]);
-      fetch(`http://localhost:5000/api?themes=${JSON.stringify(firstColumnValues)}`)
+      const token = props.token; // Assuming you have the token available in props
+      
+      fetch(`http://localhost:5000/randomcolumn?themes=${JSON.stringify(firstColumnValues)}`, {
+        headers: {
+          Authorization: `Bearer ${token}` // Add the token to the Authorization header
+        }
+      })
         .then(response => response.json())
         .then(data => {
+          console.log(data)
           const { theme, questions } = data;
           const newGridValues = new GridValues(theme, ...questions.flatMap(q => [q.question, q.answer]));
+          console.log(newGridValues)
           props.setGridValues(prevGridValues => {
             const updatedGridValues = [...prevGridValues];
             updatedGridValues[columnIndex] = [...newGridValues.toArray()];
-            console.log(updatedGridValues)
+            console.log(updatedGridValues);
             return updatedGridValues;
           });
         });
     }
+    
 
     
     

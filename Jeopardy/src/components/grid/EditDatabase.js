@@ -16,15 +16,19 @@ export default function EditDatabase(props) {
   const [data, setData] = useState({ themes: [], questions: [] });
   const [themeEntry, setThemeEntry] = useState("");
   const [qaEntries, setQAEntries] = useState([
-    { question: "", answer: "", difficulty: 1, id: props.id},
-    { question: "", answer: "", difficulty: 2, id: props.id},
-    { question: "", answer: "", difficulty: 3, id: props.id},
-    { question: "", answer: "", difficulty: 4, id: props.id},
-    { question: "", answer: "", difficulty: 5, id: props.id}
+    { question: "", answer: "", difficulty: 1},
+    { question: "", answer: "", difficulty: 2},
+    { question: "", answer: "", difficulty: 3},
+    { question: "", answer: "", difficulty: 4},
+    { question: "", answer: "", difficulty: 5}
   ]);
   
   function fetchData() {
-    fetch(`http://localhost:5000/api/all?id=${props.id}`)
+    fetch('http://localhost:5000/api/all', {
+      headers: {
+        Authorization: `Bearer ${props.token}`
+      }
+    })
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
@@ -34,6 +38,7 @@ export default function EditDatabase(props) {
         console.error("Error fetching data:", error);
       });
   }
+  
 
   function handleRefresh() {
     fetchData();
@@ -55,12 +60,15 @@ export default function EditDatabase(props) {
     setQAEntries(updatedEntries);
   };
 
+
   const handleAddToDatabase = () => {
+    console.log("test");
+    console.log(props.token);
     if (themeEntry === "") {
       console.log("Theme field is required");
       return;
     }
-
+  
     const entriesToAdd = qaEntries.filter(
       (entry) => entry.question !== "" && entry.answer !== ""
     );
@@ -69,10 +77,12 @@ export default function EditDatabase(props) {
       theme: themeEntry,
       entries: entriesToAdd,
     };
+    
     fetch("http://localhost:5000/api/addToDatabase", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${props.token}` // Include the token in the headers
       },
       body: JSON.stringify(dataToAdd),
     })
@@ -81,11 +91,11 @@ export default function EditDatabase(props) {
         console.log("Data added to database:", data);
         setThemeEntry("");
         setQAEntries([
-          { question: "", answer: "", difficulty: 1, id: props.id},
-          { question: "", answer: "", difficulty: 2, id: props.id},
-          { question: "", answer: "", difficulty: 3, id: props.id},
-          { question: "", answer: "", difficulty: 4, id: props.id},
-          { question: "", answer: "", difficulty: 5, id: props.id}
+          { question: "", answer: "", difficulty: 1 },
+          { question: "", answer: "", difficulty: 2 },
+          { question: "", answer: "", difficulty: 3 },
+          { question: "", answer: "", difficulty: 4 },
+          { question: "", answer: "", difficulty: 5 }
         ]);
         fetchData();
       })
@@ -93,6 +103,7 @@ export default function EditDatabase(props) {
         console.error("Error adding data to database:", error);
       });
   };
+  
 
  
   const handleDeleteItem = (itemId) => {
@@ -100,7 +111,6 @@ export default function EditDatabase(props) {
     if (!confirmed) {
       return;
     }
-
     fetch(`http://localhost:5000/api/deleteItem/${itemId}`, {
       method: "DELETE",
     })
@@ -120,7 +130,7 @@ export default function EditDatabase(props) {
             Logged in user: {props.user} {props.id}
           </div>
       <div>
-        <button onClick={() => props.handleGoToIndexPage()}>Go to configuration page</button>
+        <button onClick={() => props.handleGoToIndexPage(props.user, props.id, props.token)}>Go to configuration page</button>
         <button onClick={handleRefresh}>Refresh Database</button>
       </div>
 
@@ -168,7 +178,9 @@ export default function EditDatabase(props) {
               <strong>Answer:</strong> {item.answer} &nbsp;&nbsp;&nbsp;&nbsp;
               <strong>Difficulty:</strong> {item.difficulty}
               <strong>User:</strong> {item.user}
-              <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
+              {item.user === props.id && (
+                <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
+              )}
             </li>
           ))}
         </ul>
