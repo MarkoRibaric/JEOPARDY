@@ -443,6 +443,55 @@ app.get('/api/themes/:selectedThemeId', (req, res) => {
   });
 });
 
+app.post('/saveboard', (req, res) => {
+  const { id, name, gridValues } = req.body;
+
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace("Bearer ", "");
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const userId = decoded.userId;
+
+    if (id) {
+      // Update existing row
+      db.run('UPDATE boards SET user = ?, boardname = ?, data = ? WHERE id = ?', [userId, name, JSON.stringify(gridValues), id], (updateErr) => {
+        if (updateErr) {
+          console.error(updateErr);
+          res.status(500).json({ error: 'Internal Server Error' });
+          return;
+        }
+        res.json({ success: true });
+      });
+    } else {
+      // Create new row
+      db.run('INSERT INTO boards (user, boardname, data) VALUES (?, ?, ?)', [userId, name, JSON.stringify(gridValues)], (insertErr) => {
+        if (insertErr) {
+          console.error(insertErr);
+          res.status(500).json({ error: 'Internal Server Error' });
+          return;
+        }
+        res.json({ success: true });
+      });
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.get('/play/:roomCode', (req, res) => {
   const roomCode = req.params.roomCode;
 });

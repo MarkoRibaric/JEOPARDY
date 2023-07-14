@@ -8,7 +8,6 @@
     const [selectedThemeId, setSelectedThemeId] = useState('');
     const [selectedColumn, setSelectedColumn] = useState('');
     const [selectedQuestions, setSelectedQuestions] = useState([]);
-
     const [questionsByDifficulty, setQuestionsByDifficulty] = useState({
       1: [],
       2: [],
@@ -16,7 +15,6 @@
       4: [],
       5: []
     });
-    
     useEffect(() => {
       fetch('http://localhost:5000/api/themes', {
         headers: {
@@ -105,11 +103,11 @@
     
     function GetRandomColumnQuestion(columnIndex) {
       const firstColumnValues = props.gridValues.map(row => row[0]);
-      const token = props.token; // Assuming you have the token available in props
+      const token = props.token;
       
       fetch(`http://localhost:5000/randomcolumn?themes=${JSON.stringify(firstColumnValues)}`, {
         headers: {
-          Authorization: `Bearer ${token}` // Add the token to the Authorization header
+          Authorization: `Bearer ${token}`
         }
       })
         .then(response => response.json())
@@ -156,6 +154,11 @@
       });
     }
     
+
+    function handleSaveGame() {
+      props.SaveData(null, props.token, "Test2", props.gridValues);
+    }
+  
     
     
     return (
@@ -166,6 +169,7 @@
           </div>
           <div>
             Logged in user: {props.user} {props.id}
+            <button onClick={handleSaveGame}>Save Game</button>
           </div>
         </div>
         <div className="main-container">
