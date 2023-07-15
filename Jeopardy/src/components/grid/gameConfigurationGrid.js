@@ -9,8 +9,9 @@ export default function GameConfigurationGrid(props) {
   const [selectedColumn, setSelectedColumn] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [name, setName] = useState('');
-  const [boardData, setBoardData] = useState([]);
+  const [BoardInformation, setBoardInformation] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState('');
+  const [boardData, setBoardData] = useState(Array.from(Array(6), () => Array(6).fill("")));
   const [questionsByDifficulty, setQuestionsByDifficulty] = useState({
     1: [],
     2: [],
@@ -34,8 +35,8 @@ export default function GameConfigurationGrid(props) {
       });
   }, []);
 
-  
-  
+
+
   function handleThemeChange(event) {
     const selectedThemeId = event.target.value;
 
@@ -106,7 +107,7 @@ export default function GameConfigurationGrid(props) {
   }
 
   function GetRandomColumnQuestion(columnIndex) {
-    const firstColumnValues = props.gridValues.map(row => row[0]);
+    const firstColumnValues = boardData.map(row => row[0]);
     const token = props.token;
 
     fetch(`http://localhost:5000/randomcolumn?themes=${JSON.stringify(firstColumnValues)}`, {
@@ -120,7 +121,7 @@ export default function GameConfigurationGrid(props) {
         const { theme, questions } = data;
         const newGridValues = new GridValues(theme, ...questions.flatMap(q => [q.question, q.answer]));
 
-        props.setGridValues(prevGridValues => {
+        setBoardData(prevGridValues => {
           const updatedGridValues = [...prevGridValues];
           updatedGridValues[columnIndex] = [...newGridValues.toArray()];
           return updatedGridValues;
@@ -145,7 +146,7 @@ export default function GameConfigurationGrid(props) {
       ...selectedQuestions.flatMap(q => [q.question, q.answer])
     );
 
-    props.setGridValues(prevGridValues => {
+    setBoardData(prevGridValues => {
       const updatedGridValues = [...prevGridValues];
       updatedGridValues[selectedColumn - 1] = [...newGridValues.toArray()];
       return updatedGridValues;
@@ -155,28 +156,74 @@ export default function GameConfigurationGrid(props) {
 
   function handleSaveGame(savetype) {
     console.log(savetype)
-    if(savetype==0){
-      props.SaveData(null, props.token, name, props.gridValues);
+    if (savetype == 0) {
+      SaveData(null, props.token, name, boardData);
       fetch('http://localhost:5000/api/boards', {
+        headers: {
+          Authorization: `Bearer ${props.token}`
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          setBoardInformation(data);
+        })
+        .catch(error => {
+          console.error('Error fetching board data:', error);
+        });
+    }
+    else if (savetype == 1) {
+      console.log(selectedBoard)
+      console.log(selectedBoard.id)
+      console.log(selectedBoard.boardname)
+      console.log(boardData)
+      SaveData(selectedBoard.id, props.token, selectedBoard.boardname, boardData);
+    }
+  }
+
+  function SaveData(id, token, name, gridValues) {
+    const backendUrl = "http://localhost:5000/saveboard";
+    fetch(backendUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ id, name, gridValues })
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Success response from the backend
+      })
+      .catch(error => {
+        console.error("Error saving data:", error);
+      });
+  }
+
+  function deleteBoard() {
+    if (!selectedBoard || !selectedBoard.id) {
+      console.error('Invalid selection: No board selected');
+      return;
+    }
+
+    const boardId = selectedBoard.id;
+    console.log(boardId)
+    fetch(`http://localhost:5000/api/boards/${boardId}`, {
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${props.token}`
       }
     })
-      .then(response => response.json())
-      .then(data => {
-        setBoardData(data);
+      .then(response => {
+        if (response.ok) {
+          console.log(`Board with ID ${boardId} deleted successfully.`);
+        } else {
+          console.error('Error deleting board:', response.status);
+        }
       })
       .catch(error => {
-        console.error('Error fetching board data:', error);
+        console.error('Error deleting board:', error);
       });
-    }
-    else if(savetype==1){
-      console.log(selectedBoard)
-      console.log(selectedBoard.id)
-      console.log(selectedBoard.boardname)
-      console.log(props.gridValues)
-      props.SaveData(selectedBoard.id, props.token, selectedBoard.boardname, props.gridValues);
-    }
+    setSelectedBoard(null)
   }
 
   useEffect(() => {
@@ -187,7 +234,7 @@ export default function GameConfigurationGrid(props) {
     })
       .then(response => response.json())
       .then(data => {
-        setBoardData(data);
+        setBoardInformation(data);
       })
       .catch(error => {
         console.error('Error fetching board data:', error);
@@ -199,11 +246,11 @@ export default function GameConfigurationGrid(props) {
   function handleBoardChange(event) {
     const selectedBoardId = event.target.value;
     console.log(selectedBoardId)
-    const selectedBoardData = boardData.find(board => parseInt(board.id) === parseInt(selectedBoardId));
-    setSelectedBoard(selectedBoardData);
+    const selectedBoardInformation = BoardInformation.find(board => parseInt(board.id) === parseInt(selectedBoardId));
+    setSelectedBoard(selectedBoardInformation);
   }
 
-  
+
   useEffect(() => {
     if (selectedBoard) {
       fetch(`http://localhost:5000/api/boards/${selectedBoard.id}`, {
@@ -214,13 +261,15 @@ export default function GameConfigurationGrid(props) {
         .then(response => response.json())
         .then(data => {
           const parsedData = JSON.parse(data.data);
-          props.setGridValues(parsedData);
+          setBoardData(parsedData);
         })
         .catch(error => {
           console.error('Error fetching board data:', error);
         });
     }
   }, [selectedBoard]);
+
+
   return (
     <div className="container">
       <div className="top-container">
@@ -231,15 +280,17 @@ export default function GameConfigurationGrid(props) {
           Logged in user: {props.user} {props.id}
           <input type="text" value={name} onChange={event => setName(event.target.value)} />
           <button onClick={() => handleSaveGame(0)}>Save New Game</button>
-          <select value={selectedBoard} onChange={handleBoardChange}>
+          <select value={selectedBoard?.id || ''} onChange={handleBoardChange}>
+
             <option value="">Select a board</option>
-            {boardData.map(board => (
+            {BoardInformation.map(board => (
               <option key={board.id} value={board.id}>
                 {board.boardname}
               </option>
             ))}
           </select>
           <button onClick={() => handleSaveGame(1)}>Save current game</button>
+          <button onClick={() => deleteBoard()}>Delete current game</button>
         </div>
       </div>
       <div className="main-container">
@@ -255,8 +306,8 @@ export default function GameConfigurationGrid(props) {
                 <tr key={rowIndex}>
                   {Array.from(Array(6)).map((_, columnIndex) => (
                     <td key={`${rowIndex}-${columnIndex}`} className="theme-name">
-                      <div className="question">{props.gridValues[columnIndex][rowIndex][0]}</div>
-                      <div className="answer">{props.gridValues[columnIndex][rowIndex][1]}</div>
+                      <div className="question">{boardData[columnIndex][rowIndex][0]}</div>
+                      <div className="answer">{boardData[columnIndex][rowIndex][1]}</div>
                     </td>
                   ))}
                 </tr>

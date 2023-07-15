@@ -535,6 +535,27 @@ app.get('/api/boards/:id', (req, res) => {
   });
 });
 
+app.delete('/api/boards/:id', (req, res) => {
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace('Bearer ', '');
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const userId = decoded.userId;
+    const boardId = req.params.id;
+    db.run('DELETE FROM boards WHERE user = ? AND id = ?', [userId, parseInt(boardId)], (deleteErr) => {
+      if (deleteErr) {
+        console.error(deleteErr);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      res.status(204).send(); // No content
+    });
+  });
+});
 
 
 
