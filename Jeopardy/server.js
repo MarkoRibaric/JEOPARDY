@@ -447,7 +447,7 @@ app.post('/saveboard', (req, res) => {
   const { id, name, gridValues } = req.body;
 
   const token = req.headers.authorization;
-  const tokenWithoutBearer = token.replace("Bearer ", "");
+  const tokenWithoutBearer = token.replace('Bearer ', '');
   jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
       console.error('Error verifying token:', err);
@@ -455,9 +455,7 @@ app.post('/saveboard', (req, res) => {
       return;
     }
     const userId = decoded.userId;
-
     if (id) {
-      // Update existing row
       db.run('UPDATE boards SET user = ?, boardname = ?, data = ? WHERE id = ?', [userId, name, JSON.stringify(gridValues), id], (updateErr) => {
         if (updateErr) {
           console.error(updateErr);
@@ -468,20 +466,74 @@ app.post('/saveboard', (req, res) => {
       });
     } else {
       // Create new row
-      db.run('INSERT INTO boards (user, boardname, data) VALUES (?, ?, ?)', [userId, name, JSON.stringify(gridValues)], (insertErr) => {
+      db.run('INSERT INTO boards (user, boardname, data) VALUES (?, ?, ?)', [userId, name, JSON.stringify(gridValues)], function (insertErr) {
         if (insertErr) {
           console.error(insertErr);
           res.status(500).json({ error: 'Internal Server Error' });
           return;
         }
-        res.json({ success: true });
+        const newBoardId = this.lastID; // Get the ID of the newly inserted row
+        res.json({ success: true, id: newBoardId });
       });
     }
   });
 });
 
 
+app.get('/api/boards', (req, res) => {
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace('Bearer ', '');
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const userId = decoded.userId;
+    db.all('SELECT id, boardname FROM boards WHERE user = ?', [userId], (selectErr, rows) => {
+      if (selectErr) {
+        console.error(selectErr);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      res.json(rows);
+    });
+  });
+});
 
+
+app.get('/api/boards/:id', (req, res) => {
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace('Bearer ', '');
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
+    if (err) {
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const userId = decoded.userId;
+    const boardId = req.params.id;
+    console.log(userId)
+    console.log(boardId)
+    console.log()
+    db.get(
+      'SELECT * FROM boards WHERE user = ? AND id = ?',
+      [userId, parseInt(boardId)],
+      (selectErr, row) => {
+        if (selectErr) {
+          console.error(selectErr);
+          res.status(500).json({ error: 'Internal Server Error' });
+          return;
+        }
+        if (!row) {
+          res.status(404).json({ error: 'Board not found' });
+          return;
+        }
+        res.json(row);
+      }
+    );
+  });
+});
 
 
 
