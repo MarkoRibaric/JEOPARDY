@@ -1,17 +1,16 @@
 import './App.css';
 import { useState, useEffect } from 'react';
-import GameBoard from './components/grid/gameBoard';
+import GameConfigurationGrid from './components/grid/gameConfigurationGrid';
 import EditDatabase from './components/grid/EditDatabase';
 import Login from './components/Login/Login';
-import { socket } from './socket';
+import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import PlayGrid from "./components/grid/playGrid";
+import PrivateRoute from './components/PrivateRoute';
 
 function App() {
     const [currentloggedinuser, setCurrentLoggedInUser] = useState("");
     const [currentloggedinuserID, setCurrentLoggedInUserID] = useState(0);
     const [token, settoken] = useState("");
-
-    
-    
     const pages = {
         LOGIN : 1,
         INDEX: 2,
@@ -26,15 +25,32 @@ function App() {
         setCurrentLoggedInUser(user);
         setCurrentLoggedInUserID(id);
         settoken(token);
-        setPageState(pages.INDEX);
     };
+
+    const router = createBrowserRouter([
+        {
+            path: "/",
+            element: <Login handleGoToIndexPage={handleGoToIndexPage}/>,
+        },
+        {
+            path: "gameboard",
+            element: <PrivateRoute token={token} ><GameConfigurationGrid handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/></PrivateRoute>,
+        },
+        {
+            path: "editQuestions",
+            element: <PrivateRoute token={token}><EditDatabase handleGoToIndexPage={handleGoToIndexPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/></PrivateRoute>
+        },
+        {
+            path: "play/:roomCode",
+            element: <PlayGrid user={currentloggedinuser} id={currentloggedinuserID} />
+        }
+      ]);
+      
 
     return (
         <>
         <div className="App">
-        {pageState === pages.LOGIN && <Login handleGoToIndexPage={handleGoToIndexPage} setCurrentLoggedInUser={setCurrentLoggedInUser} />}
-        {pageState === pages.INDEX && <GameBoard handleGoToEditPage={handleGoToEditPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/>}
-        {pageState === pages.EDIT && <EditDatabase handleGoToIndexPage={handleGoToIndexPage} user={currentloggedinuser} token={token} id={currentloggedinuserID}/>}
+        <RouterProvider router={router} />
         </div>
         </>
     );

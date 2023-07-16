@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './grid.css';
 import GridValues from './gridValues';
-import { gridStatusEnum } from './gameBoard'
 import { socket } from '../../socket';
-
+import { useNavigate } from 'react-router-dom';
 
 
 export default function GameConfigurationGrid(props) {
@@ -24,6 +23,7 @@ export default function GameConfigurationGrid(props) {
   });
 
   const [roomCodeInput, setRoomCodeInput] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch('http://localhost:5000/api/themes', {
@@ -282,14 +282,15 @@ export default function GameConfigurationGrid(props) {
             roomCode: roomCodeInput
             
         });
-        props.setGridStatus(gridStatusEnum.PLAY)
+        navigate("/play/"+roomCodeInput);
     }
     const createNewRoom = () => {
+        const roomCode = generateRandomString();
         socket.emit('CreateRoom', {
-            roomCode: generateRandomString(),
+            roomCode: roomCode,
             BoardID: selectedBoard.id,
         });
-        props.setGridStatus(gridStatusEnum.PLAY)
+        navigate("/play/"+roomCode);
     }
     const checkRooms = () => {
         socket.emit('CheckRooms');
@@ -336,7 +337,7 @@ export default function GameConfigurationGrid(props) {
     <div className="container">
       <div className="top-container">
         <div>
-          <button id="startGameButton" onClick={() => props.setGridStatus(gridStatusEnum.PLAY)}>Start game</button>
+          <button id="startGameButton" onClick={() => createNewRoom()}>Start game</button>
         </div>
         <div>
           Logged in user: {props.user} {props.id}
@@ -408,7 +409,7 @@ export default function GameConfigurationGrid(props) {
             </select>
             <button onClick={SetIndividualGridColumn}>Set Grid Values</button>
 
-            <button onClick={() => props.handleGoToEditPage()}>Go to Edit Page</button>
+            <button onClick={() => navigate("/editQuestions")}>Go to Edit Page</button>
             <div>
               <button onClick={joinRoom}>Test join room</button>
         <input

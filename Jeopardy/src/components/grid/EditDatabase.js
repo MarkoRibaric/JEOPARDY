@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 function TextEntry({ value, onChange }) {
   const handleInputChange = (event) => {
@@ -22,6 +23,7 @@ export default function EditDatabase(props) {
     { question: "", answer: "", difficulty: 4},
     { question: "", answer: "", difficulty: 5}
   ]);
+  const navigate = useNavigate();
   
   function fetchData() {
     fetch('http://localhost:5000/api/all', {
@@ -130,7 +132,7 @@ export default function EditDatabase(props) {
             Logged in user: {props.user} {props.id}
           </div>
       <div>
-        <button onClick={() => props.handleGoToIndexPage(props.user, props.id, props.token)}>Go to configuration page</button>
+        <button onClick={() => navigate("/gameBoard")}>Go to configuration page</button>
         <button onClick={handleRefresh}>Refresh Database</button>
       </div>
 

@@ -1,9 +1,10 @@
 import React from 'react'
 import { Form, Input, Button, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-
+import { useNavigate } from "react-router-dom";
 
 export default function Login(props) {
+    const navigate = useNavigate();
     const onFinish = values => {
         const { username, password} = values;
         fetch('http://localhost:5000/validatePassword', {
@@ -16,6 +17,8 @@ export default function Login(props) {
             .then(response => response.json())
             .then(data => {
                 if (data.validation) {
+                    debugger;
+                    navigate('/gameboard');
                     alert('Your password is correct');
                     const userId = data.userId; 
                     const token = data.token;

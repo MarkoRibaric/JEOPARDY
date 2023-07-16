@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './gamegrid.css';
-import { gridStatusEnum } from './gameBoard';
 import { socket } from '../../socket';
+import { useNavigate } from 'react-router-dom';
 
 export default function PlayGrid(props) {
   const [clickedCell, setClickedCell] = useState(null);
@@ -11,6 +11,7 @@ export default function PlayGrid(props) {
   const [themes, setThemes] = useState([]);
   const [currentShownValue, setcurrentShownValue] = useState("Test");
   const [themeID, setThemeID] = useState([]);
+  const navigate = useNavigate()
 
   const handleOverlay1Click = () => {
     socket.emit('overlayClicked2', clickedCell.row, clickedCell.column);
@@ -66,8 +67,8 @@ export default function PlayGrid(props) {
   return (
     <div>
       <div>
-        <button onClick={() => props.setGridStatus(gridStatusEnum.CONFIGURATION)}>Quit game</button>
-        <button onClick={() => socket.emit('startGame')}>Quit game</button>
+        <button onClick={() => navigate("/gameboard")}>Quit game</button>
+        <button onClick={() => socket.emit('startGame')}>Start Game</button>
       </div>
       <div className="grid">
         <table>
