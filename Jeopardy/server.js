@@ -470,6 +470,7 @@ app.post('/saveboard', (req, res) => {
         if (insertErr) {
           console.error(insertErr);
           res.status(500).json({ error: 'Internal Server Error' });
+          console.log(gridValues)
           return;
         }
         const newBoardId = this.lastID; // Get the ID of the newly inserted row
@@ -558,13 +559,6 @@ app.delete('/api/boards/:id', (req, res) => {
 });
 
 
-
-
-
-
-
-
-
 app.get('/play/:roomCode', (req, res) => {
   const roomCode = req.params.roomCode;
 });
@@ -575,11 +569,112 @@ server.listen(5000, () => {
 
 io.on('connection', (socket) => {
   console.log('a user connected');
+  let roomCreator = false;
   socket.on('JoinRoom', (data) => {
-    // Logic here
     console.log(`New user joined ${data.roomCode}`);
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
-  })
-});
+    socket.roomCode = data.roomCode;
+  });
+  socket.on('CreateRoom', (data) => {
+    console.log(`New user joined ${data.roomCode}`);
+    socket.join(data.roomCode);
+    io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
+    socket.roomCode = data.roomCode;
+    socket.BoardID = data.BoardID;
+    roomCreator = true;
+  });
 
+  socket.on('CheckRooms', () => {
+    const rooms = io.sockets.adapter.rooms;
+    console.log(rooms);
+    const roomList = [];
+    socket.emit('RoomList', roomList);
+  });
+
+  socket.on('overlayClicked', (row, column) => {
+    if (roomCreator) {
+        io.to(socket.roomCode).emit('displayOverlay', row, column);
+    } else {
+      console.log('Only the room creator can trigger this action.');
+    }
+  });
+  socket.on('overlayClicked2', (row, column) => {
+    if (roomCreator) {
+      getQuestionAnswer(0, row, column, socket.BoardID, (question) => {
+        console.log(question);
+        io.to(socket.roomCode).emit('displayOverlay2', question);
+      });
+    } else {
+      console.log('Only the room creator can trigger this action.');
+    }
+  });
+  socket.on('overlayClicked3', (row, column) => {
+    if (roomCreator) {
+      getQuestionAnswer(1, row, column, socket.BoardID, (answer) => {
+        console.log(answer);
+        io.to(socket.roomCode).emit('displayOverlay3', answer);
+      });
+    } else {
+      console.log('Only the room creator can trigger this action.');
+    }
+  });
+  socket.on('overlayClicked4', () => {
+    if (roomCreator) {
+      io.to(socket.roomCode).emit('displayOverlay4');
+    } else {
+      console.log('Only the room creator can trigger this action.');
+    }
+  });
+  socket.on('startGame', () => {
+    if (roomCreator) {
+      getThemes(socket.BoardID, (themes) => {
+        console.log(themes);
+        io.to(socket.roomCode).emit('startGame', themes);
+      });
+    } else {
+      console.log('Only the room creator can start the game.');
+    }
+  });
+  
+  function getThemes(BoardID, callback) {
+    db.get('SELECT data FROM boards WHERE id = ?', [BoardID], (err, row) => {
+      if (err) {
+        console.error(err.message);
+        callback([]); // Return an empty array in case of an error
+        return;
+      }
+  
+      if (!row) {
+        console.log(`Board with ID ${BoardID} not found`);
+        callback([]); // Return an empty array if the board is not found
+        return;
+      }
+  
+      const data = JSON.parse(row.data);
+      const themes = data.map(array => array[0][0]);
+      callback(themes); // Pass the themes to the callback function
+    });}
+
+    function getQuestionAnswer(q, rowIndex, columnIndex, BoardID, callback) {
+      db.get('SELECT data FROM boards WHERE id = ?', [BoardID], (err, row) => {
+        if (err) {
+          console.error(err.message);
+          callback([]); // Return an empty array in case of an error
+          return;
+        }
+        if (!row) {
+          console.log(`Board with ID ${BoardID} not found`);
+          callback([]); // Return an empty array if the board is not found
+          return;
+        }
+        console.log(columnIndex);
+        console.log(rowIndex);
+        const data = JSON.parse(row.data);
+        const question_answer = data[columnIndex][rowIndex+1][q]
+
+
+        callback(question_answer); // Pass the themes to the callback function
+      });}
+  
+});

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import './grid.css';
 import GridValues from './gridValues';
 import { gridStatusEnum } from './gameBoard'
+import { socket } from '../../socket';
+
+
 
 export default function GameConfigurationGrid(props) {
   const [themes, setThemes] = useState([]);
@@ -20,10 +23,12 @@ export default function GameConfigurationGrid(props) {
     5: []
   });
 
+  const [roomCodeInput, setRoomCodeInput] = useState("");
+
   useEffect(() => {
     fetch('http://localhost:5000/api/themes', {
       headers: {
-        Authorization: `Bearer ${props.token}` // Add the token to the Authorization header
+        Authorization: `Bearer ${props.token}`
       }
     })
       .then(response => response.json())
@@ -181,6 +186,7 @@ export default function GameConfigurationGrid(props) {
   }
 
   function SaveData(id, token, name, gridValues) {
+    
     const backendUrl = "http://localhost:5000/saveboard";
     fetch(backendUrl, {
       method: "POST",
@@ -270,6 +276,62 @@ export default function GameConfigurationGrid(props) {
   }, [selectedBoard]);
 
 
+  
+    const joinRoom = () => {
+        socket.emit('JoinRoom', {
+            roomCode: roomCodeInput
+            
+        });
+        props.setGridStatus(gridStatusEnum.PLAY)
+    }
+    const createNewRoom = () => {
+        socket.emit('CreateRoom', {
+            roomCode: generateRandomString(),
+            BoardID: selectedBoard.id,
+        });
+        props.setGridStatus(gridStatusEnum.PLAY)
+    }
+    const checkRooms = () => {
+        socket.emit('CheckRooms');
+      };
+
+    useEffect(() => {
+        function onConnect() {
+            console.log("Connected")
+        }
+    
+        function onDisconnect() {
+            console.log ("Disconnected!");
+        }
+
+        function onUserJoin(data) {
+            console.log(data);
+        }
+        
+        function onRoomList(rooms) {
+            console.log('Room list:', rooms);
+          }
+    
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('UserJoin', onUserJoin);
+        socket.on('RoomList', onRoomList);
+        return () => {
+          socket.off('connect', onConnect);
+          socket.off('disconnect', onDisconnect);
+          socket.off('UserJoin', onUserJoin);
+          socket.off('RoomList', onRoomList);
+        };
+      }, []);
+    
+      
+
+    function generateRandomString() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const randomString = Array.from({ length: 5 }, () => characters[Math.floor(Math.random() * characters.length)]);
+        return randomString.join('');
+    }
+
   return (
     <div className="container">
       <div className="top-container">
@@ -291,6 +353,7 @@ export default function GameConfigurationGrid(props) {
           </select>
           <button onClick={() => handleSaveGame(1)}>Save current game</button>
           <button onClick={() => deleteBoard()}>Delete current game</button>
+          
         </div>
       </div>
       <div className="main-container">
@@ -346,7 +409,16 @@ export default function GameConfigurationGrid(props) {
             <button onClick={SetIndividualGridColumn}>Set Grid Values</button>
 
             <button onClick={() => props.handleGoToEditPage()}>Go to Edit Page</button>
-
+            <div>
+              <button onClick={joinRoom}>Test join room</button>
+        <input
+            type="text"
+            value={roomCodeInput}
+            onChange={(e) => setRoomCodeInput(e.target.value)}
+        />
+        <button onClick={createNewRoom}>Create new room</button>
+        <button onClick={checkRooms}>Check Rooms</button>
+            </div>
           </div>
         </div>
       </div>
