@@ -585,6 +585,15 @@ io.on('connection', (socket) => {
     roomCreator = true;
   });
 
+  socket.on('GetRoomName', () => {
+    const roomName = socket.roomCode;
+    socket.emit('RoomName', roomName);
+  });
+
+  socket.on('LeaveRoom', () => {
+    socket.leave(socket.roomCode);
+  });
+
   socket.on('CheckRooms', () => {
     const rooms = io.sockets.adapter.rooms;
     console.log(rooms);
@@ -593,7 +602,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('overlayClicked', (row, column) => {
+    console.log("Test")
     if (roomCreator) {
+        console.log(socket.roomCode)
         io.to(socket.roomCode).emit('displayOverlay', row, column);
     } else {
       console.log('Only the room creator can trigger this action.');

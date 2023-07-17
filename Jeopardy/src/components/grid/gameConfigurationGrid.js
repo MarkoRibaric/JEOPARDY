@@ -160,21 +160,24 @@ export default function GameConfigurationGrid(props) {
 
 
   function handleSaveGame(savetype) {
-    console.log(savetype)
+    const isNameAbsent = BoardInformation.some(item => item.boardname === name);
     if (savetype == 0) {
-      SaveData(null, props.token, name, boardData);
-      fetch('http://localhost:5000/api/boards', {
-        headers: {
-          Authorization: `Bearer ${props.token}`
-        }
-      })
-        .then(response => response.json())
-        .then(data => {
-          setBoardInformation(data);
+      if(name!="" && !isNameAbsent){
+        SaveData(null, props.token, name, boardData);
+        fetch('http://localhost:5000/api/boards', {
+          headers: {
+            Authorization: `Bearer ${props.token}`
+          }
         })
-        .catch(error => {
-          console.error('Error fetching board data:', error);
-        });
+          .then(response => response.json())
+          .then(data => {
+            setBoardInformation(data);
+          })
+          .catch(error => {
+            console.error('Error fetching board data:', error);
+          });
+      }
+      
     }
     else if (savetype == 1) {
       console.log(selectedBoard)
@@ -285,12 +288,15 @@ export default function GameConfigurationGrid(props) {
         navigate("/play/"+roomCodeInput);
     }
     const createNewRoom = () => {
-        const roomCode = generateRandomString();
-        socket.emit('CreateRoom', {
-            roomCode: roomCode,
-            BoardID: selectedBoard.id,
-        });
-        navigate("/play/"+roomCode);
+        if(selectedBoard != ""){
+          const roomCode = generateRandomString();
+          socket.emit('CreateRoom', {
+              roomCode: roomCode,
+              BoardID: selectedBoard.id,
+          });
+          navigate("/play/"+roomCode);
+        }
+        
     }
     const checkRooms = () => {
         socket.emit('CheckRooms');
@@ -417,7 +423,6 @@ export default function GameConfigurationGrid(props) {
             value={roomCodeInput}
             onChange={(e) => setRoomCodeInput(e.target.value)}
         />
-        <button onClick={createNewRoom}>Create new room</button>
         <button onClick={checkRooms}>Check Rooms</button>
             </div>
           </div>

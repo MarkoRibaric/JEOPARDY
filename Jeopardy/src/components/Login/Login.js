@@ -1,4 +1,5 @@
 import React from 'react'
+import './login.css';
 import { Form, Input, Button, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
@@ -6,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 export default function Login(props) {
     const navigate = useNavigate();
     const onFinish = values => {
-        const { username, password} = values;
+        const { username, password } = values;
         fetch('http://localhost:5000/validatePassword', {
             method: 'POST',
             headers: {
@@ -17,10 +18,9 @@ export default function Login(props) {
             .then(response => response.json())
             .then(data => {
                 if (data.validation) {
-                    debugger;
                     navigate('/gameboard');
                     alert('Your password is correct');
-                    const userId = data.userId; 
+                    const userId = data.userId;
                     const token = data.token;
                     props.handleGoToIndexPage(username, userId, token);
                 } else {
@@ -54,17 +54,23 @@ export default function Login(props) {
             });
     };
     return (
-        <div>
+        <div className="app-background align-items-center d-flex h-100 justify-content-center w-100">
+            <div className="app-background-login align-items-center bg-light border d-flex gap-5 p-5 rounded">
             <div>
-                LOGIN
                 <Form
                     name="normal_login"
-                    className="login-form"
+                    className="normal-login d-flex flex-column align-items-center"
                     initialValues={{
                         remember: true,
                     }}
                     onFinish={onFinish}
                 >
+                    <Form.Item>
+                        <div className='fw-bold'>
+                        LOGIN
+                        </div>
+                    
+                    </Form.Item>
                     <Form.Item
                         name="username"
                         rules={[
@@ -103,15 +109,20 @@ export default function Login(props) {
 
 
             <div>
-                REGISTARTION
                 <Form
                     name="register_login"
-                    className="registration-form"
+                    className="register-login d-flex flex-column align-items-center"
                     initialValues={{
                         remember: true,
                     }}
                     onFinish={onFinish2}
                 >
+                <Form.Item>
+                        <div className='fw-bold'>
+                        REGISTRATION
+                        </div>
+                    
+                    </Form.Item>
                     <Form.Item
                         name="username"
                         rules={[
@@ -163,11 +174,13 @@ export default function Login(props) {
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" className="login-form-button">
-                            Log in
+                            Sign up
                         </Button>
                     </Form.Item>
                 </Form>
             </div>
         </div>
+        </div>
+        
     )
 }

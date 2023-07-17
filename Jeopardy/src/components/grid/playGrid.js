@@ -10,7 +10,7 @@ export default function PlayGrid(props) {
   const [overlay3Visible, setOverlay3Visible] = useState(false);
   const [themes, setThemes] = useState([]);
   const [currentShownValue, setcurrentShownValue] = useState("Test");
-  const [themeID, setThemeID] = useState([]);
+  const [roomCode, setroomCode] = useState("Test");
   const navigate = useNavigate()
 
   const handleOverlay1Click = () => {
@@ -27,13 +27,17 @@ export default function PlayGrid(props) {
 
   
   useEffect(() => {
+    
+    socket.emit('GetRoomName');
 
-
+    socket.on('RoomName', (roomName) => {
+      setroomCode(roomName);
+    });
     socket.on('displayOverlay', (rowIndex, columnIndex) => {
       setClickedCell({ row: rowIndex, column: columnIndex});
+      console.log(clickedCell);
       setOverlay1Visible(true);
     });
-    
     socket.on('displayOverlay2', (question) => {
       setcurrentShownValue(question);
       setOverlay1Visible(false);
@@ -44,17 +48,17 @@ export default function PlayGrid(props) {
       setOverlay2Visible(false);
       setOverlay3Visible(true);
     });
-
-    
     socket.on('displayOverlay4', () => {
       setOverlay3Visible(false);
     });
     socket.on('startGame', (recievedthemes) => {
       setThemes(recievedthemes);
+      console.log(recievedthemes);
     });
     
 
     return () => {
+      socket.off('RoomName');
       socket.off('displayOverlay');
       socket.off('displayOverlay2');
       socket.off('displayOverlay3');
@@ -69,18 +73,19 @@ export default function PlayGrid(props) {
       <div>
         <button onClick={() => navigate("/gameboard")}>Quit game</button>
         <button onClick={() => socket.emit('startGame')}>Start Game</button>
+        {roomCode}
       </div>
       <div className="grid">
         <table>
           <tbody>
-            <tr className="row">
+            <tr className='row'>
               {themes.map((theme, columnIndex) => (
                 <th key={columnIndex}>{theme}</th>
               ))}
             </tr>
             
             {Array.from(Array(5)).map((_, rowIndex) => (
-              <tr className="row" key={rowIndex}>
+              <tr key={rowIndex}>
                 {Array.from(Array(6)).map((_, columnIndex) => (
                   <td
                     key={`${rowIndex}-${columnIndex}`}
