@@ -1,7 +1,7 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import 'react-bootstrap';
+import 'react-bootstrap/';
 import { useState, useEffect } from 'react';
 import GameConfigurationGrid from './components/grid/gameConfigurationGrid';
 import EditDatabase from './components/grid/EditDatabase';

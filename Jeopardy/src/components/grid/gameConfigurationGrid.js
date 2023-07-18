@@ -3,6 +3,7 @@ import './grid.css';
 import GridValues from './gridValues';
 import { socket } from '../../socket';
 import { useNavigate } from 'react-router-dom';
+import { Container, Nav, NavDropdown, Navbar } from 'react-bootstrap';
 
 
 export default function GameConfigurationGrid(props) {
@@ -23,6 +24,7 @@ export default function GameConfigurationGrid(props) {
   });
 
   const [roomCodeInput, setRoomCodeInput] = useState("");
+  const [teamNumber, setteamNumber] = useState(2);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -179,11 +181,11 @@ export default function GameConfigurationGrid(props) {
       }
       
     }
-    else if (savetype == 1) {
-      console.log(selectedBoard)
-      console.log(selectedBoard.id)
-      console.log(selectedBoard.boardname)
-      console.log(boardData)
+    else if (savetype === 1 && selectedBoard && selectedBoard.id !== null) {
+      console.log(selectedBoard);
+      console.log(selectedBoard.id);
+      console.log(selectedBoard.boardname);
+      console.log(boardData);
       SaveData(selectedBoard.id, props.token, selectedBoard.boardname, boardData);
     }
   }
@@ -283,7 +285,6 @@ export default function GameConfigurationGrid(props) {
     const joinRoom = () => {
         socket.emit('JoinRoom', {
             roomCode: roomCodeInput
-            
         });
         navigate("/play/"+roomCodeInput);
     }
@@ -293,11 +294,12 @@ export default function GameConfigurationGrid(props) {
           socket.emit('CreateRoom', {
               roomCode: roomCode,
               BoardID: selectedBoard.id,
+              numberofteams: teamNumber
           });
           navigate("/play/"+roomCode);
         }
-        
     }
+
     const checkRooms = () => {
         socket.emit('CheckRooms');
       };
@@ -339,28 +341,39 @@ export default function GameConfigurationGrid(props) {
         return randomString.join('');
     }
 
+    function handleTeamNumberChange(event) {
+      const selectedTeamNumber = parseInt(event.target.value);
+      setteamNumber(selectedTeamNumber);
+      console.log(selectedTeamNumber)
+    }
+  
+
   return (
     <div className="container">
+
       <div className="top-container">
         <div>
           <button id="startGameButton" onClick={() => createNewRoom()}>Start game</button>
+          <select value={teamNumber} onChange={handleTeamNumberChange}>
+            <option value="2">2 Teams</option>
+            <option value="3">3 Teams</option>
+            <option value="4">4 Teams</option>
+          </select>
         </div>
         <div>
-          Logged in user: {props.user} {props.id}
+          Logged in user: {props.user}
           <input type="text" value={name} onChange={event => setName(event.target.value)} />
           <button onClick={() => handleSaveGame(0)}>Save New Game</button>
-          <select value={selectedBoard?.id || ''} onChange={handleBoardChange}>
-
-            <option value="">Select a board</option>
-            {BoardInformation.map(board => (
-              <option key={board.id} value={board.id}>
-                {board.boardname}
-              </option>
-            ))}
-          </select>
+          <select value={selectedBoard?.id != null ? selectedBoard.id : ''} onChange={handleBoardChange}>
+          <option value="">Select a board</option>
+          {BoardInformation.map(board => (
+            <option key={board.id} value={board.id}>
+              {board.boardname}
+            </option>
+          ))}
+        </select>
           <button onClick={() => handleSaveGame(1)}>Save current game</button>
           <button onClick={() => deleteBoard()}>Delete current game</button>
-          
         </div>
       </div>
       <div className="main-container">

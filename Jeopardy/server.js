@@ -567,6 +567,8 @@ server.listen(5000, () => {
   console.log("Server started on port 5000");
 });
 
+const roomInfo = new Map();
+
 io.on('connection', (socket) => {
   console.log('a user connected');
   let roomCreator = false;
@@ -575,6 +577,7 @@ io.on('connection', (socket) => {
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
+    io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode]);
   });
   socket.on('CreateRoom', (data) => {
     console.log(`New user joined ${data.roomCode}`);
@@ -582,8 +585,30 @@ io.on('connection', (socket) => {
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
     socket.BoardID = data.BoardID;
+    roomInfo[data.roomCode] = createTeamsArray(data.numberofteams);
     roomCreator = true;
   });
+  function createTeamsArray(numberOfTeams) {
+    const teamsArray = [];
+    for (let i = 0; i < numberOfTeams; i++) {
+      // Initialize each team as an empty array, you can add any default data as needed
+      teamsArray.push([]);
+    }
+    return teamsArray;
+  };
+
+  socket.on('getTeams', () => {
+    console.log(`Teams: ${socket.roomCode} ${roomInfo[socket.roomCode]}`)
+    console.log(roomInfo);
+    socket.emit('Teams', roomInfo[socket.roomCode]);
+  });
+
+  socket.on('joinTeam', (teamIndex, userName) => {
+    roomInfo[socket.roomCode][teamIndex].push(userName);
+    console.log(roomInfo[socket.roomCode])
+    io.to(socket.roomCode).emit('Teams', roomInfo[socket.roomCode]);
+  });
+  
 
   socket.on('GetRoomName', () => {
     const roomName = socket.roomCode;
