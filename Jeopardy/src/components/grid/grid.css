@@ -24,79 +24,70 @@ body {
   margin-bottom: 20px;
 }
 
-#startGameButton {
-  background-color: #08316D;
-  color: yellow;
-  font-weight: bold;
-  border: 2px solid gray;
-  padding: 20px 40px;
-  font-size: 24px;
-  border-radius: 20px;
-}
 
 .main-container {
   display: flex;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .grid-container {
-  width: 66.67%;
+  width: 70%;
   padding-right: 20px;
   margin-right: 20px;
 }
 
-.column-container {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  width: 100%;
-}
-
 .column-container button {
-  flex-grow: 1;
-  width: calc(16.67% - 10px); /* Adjust the width and spacing as desired */
-  margin-right: 10px;
-  height: 50px; /* Same height as the grid cells */
-  background-color: #08316D; /* Lighter background color */
-  color: yellow; /* Yellow letters */
-  font-weight: bold;
-  border: 2px solid gray; /* Grey outline */
-  border-radius: 5px;
-  font-size: 16px; /* Adjust the font size as desired */
+  flex: 1;
 }
-
-.column-container button:hover {
-  background-color: #EFEFEF; /* Lighter background color on hover */
-}
-
 
 .sidebar-container {
-  width: 33.33%;
   padding-left: 20px;
+}
+
+.sidebar-container select{
+  width: 200px;
 }
 
 .select-container {
   margin-bottom: 10px;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
+  display:flex;
+  gap: 15px;
+  flex-direction: column;
 }
 
 td {
-  border: 2px solid black; /* Thicker grid lines */
-  width: 16.67%;
+  border: 1px solid white;
   height: 50px;
   text-align: center;
+  width: 16.66%;
 }
 
 
-td.theme-name {
+tr:first-child th{
   text-transform: uppercase; /* Theme names in all capital letters */
   color: white; /* White text color */
   font-weight: bold;
+  border-color: white;
+  
+  background-color: #0F4D92;
+}
+
+thead{
+  border: 1px solid white;
+}
+tr:first-child td{
+  border-bottom: 1px solid white;
+  text-transform: uppercase;
+  font-size: large;
+  
+}
+
+
+
+tr:last-child td{
+  border-bottom: 1px solid white;
+
 }
 
 td .question {
@@ -110,4 +101,9 @@ td .answer {
   color: darkgoldenrod;
   font-weight: bold;
   font-size: 1.2em; /* Larger font size for the answer */
+}
+
+.option-bg-color{
+  background: #0F4D92;
+  color: white;
 }

@@ -3,7 +3,7 @@ import './grid.css';
 import GridValues from './gridValues';
 import { socket } from '../../socket';
 import { useNavigate } from 'react-router-dom';
-import { Container, Nav, NavDropdown, Navbar } from 'react-bootstrap';
+import { Button, Form,  Nav, NavDropdown, Navbar, Table } from 'react-bootstrap';
 
 
 export default function GameConfigurationGrid(props) {
@@ -24,7 +24,6 @@ export default function GameConfigurationGrid(props) {
   });
 
   const [roomCodeInput, setRoomCodeInput] = useState("");
-  const [teamNumber, setteamNumber] = useState(2);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -288,18 +287,7 @@ export default function GameConfigurationGrid(props) {
         });
         navigate("/play/"+roomCodeInput);
     }
-    const createNewRoom = () => {
-        if(selectedBoard != ""){
-          const roomCode = generateRandomString();
-          socket.emit('CreateRoom', {
-              roomCode: roomCode,
-              BoardID: selectedBoard.id,
-              numberofteams: teamNumber
-          });
-          navigate("/play/"+roomCode);
-        }
-    }
-
+    
     const checkRooms = () => {
         socket.emit('CheckRooms');
       };
@@ -341,103 +329,118 @@ export default function GameConfigurationGrid(props) {
         return randomString.join('');
     }
 
-    function handleTeamNumberChange(event) {
-      const selectedTeamNumber = parseInt(event.target.value);
-      setteamNumber(selectedTeamNumber);
-      console.log(selectedTeamNumber)
-    }
-  
+
+    const createNewRoom = (numberteams) => {
+      if(selectedBoard != ""){
+        const roomCode = generateRandomString();
+        socket.emit('CreateRoom', {
+            roomCode: roomCode,
+            BoardID: selectedBoard.id,
+            numberofteams: numberteams
+        });
+        navigate("/play/"+roomCode);
+      }
+  }
+
 
   return (
-    <div className="container">
-
+    <div className="h-100">
+      <Nav className="mb-4 bg-dark p-2 d-flex align-items-center gap-3" activeKey="1">
+      <NavDropdown className='text-white' title={<span className='text-white'>START GAME</span>} id="nav-dropdown">
+        <NavDropdown.Item onClick={() => createNewRoom(2)}  eventKey="4.1">2 TEAMS</NavDropdown.Item>
+        <NavDropdown.Item onClick={() => createNewRoom(3)}  eventKey="4.2">3 TEAMS</NavDropdown.Item>
+        <NavDropdown.Item onClick={() => createNewRoom(4)}  eventKey="4.3">4 TEAMS</NavDropdown.Item>
+      </NavDropdown>
+      <Form className="d-flex">
+            <Form.Control
+              type="joinroom"
+              placeholder="Room code"
+              className="me-2 "
+              aria-label="Room code"
+              onChange={(e) => setRoomCodeInput(e.target.value)}
+              
+            />
+            <Button variant="outline-light text-nowrap" onClick={joinRoom}>JOIN ROOM</Button>
+          </Form>
+      <Nav.Item className="ms-auto text-white d-flex align-items-center">
+          Signed in as: {props.user}
+      </Nav.Item>
+    </Nav>
       <div className="top-container">
-        <div>
-          <button id="startGameButton" onClick={() => createNewRoom()}>Start game</button>
-          <select value={teamNumber} onChange={handleTeamNumberChange}>
-            <option value="2">2 Teams</option>
-            <option value="3">3 Teams</option>
-            <option value="4">4 Teams</option>
-          </select>
-        </div>
-        <div>
-          Logged in user: {props.user}
+        <div className='d-flex gap-2 ms-4'>
           <input type="text" value={name} onChange={event => setName(event.target.value)} />
-          <button onClick={() => handleSaveGame(0)}>Save New Game</button>
-          <select value={selectedBoard?.id != null ? selectedBoard.id : ''} onChange={handleBoardChange}>
-          <option value="">Select a board</option>
+          <button className='btn btn-outline-light' onClick={() => handleSaveGame(0)}>Save New Game</button>
+        <select className='btn btn-outline-light' value={selectedBoard?.id != null ? selectedBoard.id : ''} onChange={handleBoardChange}>
+          <option className='option-bg-color' value="">Select a board</option>
           {BoardInformation.map(board => (
-            <option key={board.id} value={board.id}>
+            <option className='option-bg-color' key={board.id} value={board.id}>
               {board.boardname}
             </option>
           ))}
         </select>
-          <button onClick={() => handleSaveGame(1)}>Save current game</button>
-          <button onClick={() => deleteBoard()}>Delete current game</button>
+          <button className='btn btn-outline-light' onClick={() => handleSaveGame(1)}>Save current game</button>
+          <button className='btn btn-outline-light' onClick={() => deleteBoard()}>Delete current game</button>
         </div>
       </div>
       <div className="main-container">
-        <div className="grid-container">
-          <div className="column-container">
-            {Array.from(Array(6)).map((_, buttonIndex) => {
-              return <button key={buttonIndex} onClick={() => GetRandomColumnQuestion(buttonIndex)}>{`Change column ${buttonIndex + 1}`}</button>
-            })}
+        <div className="grid-container ms-4">
+          <div className="column-container d-flex w-100">
+            
           </div>
-          <table>
-            <tbody>
-              {Array.from(Array(6)).map((_, rowIndex) => (
-                <tr key={rowIndex}>
-                  {Array.from(Array(6)).map((_, columnIndex) => (
-                    <td key={`${rowIndex}-${columnIndex}`} className="theme-name">
-                      <div className="question">{boardData[columnIndex][rowIndex][0]}</div>
-                      <div className="answer">{boardData[columnIndex][rowIndex][1]}</div>
-                    </td>
+          <Table responsive variant='dark' bordered>
+              <thead>
+                <tr>
+                  {Array.from(Array(6)).map((_, buttonIndex) => {
+                  return <th className='p-0'><button className='border-0 btn btn-outline-light fs-5 fw-bold py-4 rounded-0 w-100' key={buttonIndex} onClick={() => GetRandomColumnQuestion(buttonIndex)}>{`RANDOMIZE COLUMN`}</button></th>
+                })}
+               </tr>
+              </thead>
+              <tbody>
+                    {Array.from(Array(6)).map((_, rowIndex) => (
+                    <tr itemScope="col" key={rowIndex}>
+                      {Array.from(Array(6)).map((_, columnIndex) => (
+                        <td key={`${rowIndex}-${columnIndex}`} className="theme-name">
+                          <div className="question">{boardData[columnIndex][rowIndex][0]}</div>
+                          <div className="answer">{boardData[columnIndex][rowIndex][1]}</div>
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </Table>
+
         </div>
         <div className="sidebar-container">
           <div className="select-container">
-            <select onChange={handleThemeChange}>
+            <select className='btn btn-outline-light' onChange={handleThemeChange}>
               <option value="">Select a theme</option>
               {themes.map(theme => (
-                <option key={theme.id} value={theme.id}>
+                <option className='option-bg-color' key={theme.id} value={theme.id}>
                   {theme.theme}
                 </option>
               ))}
             </select>
             {Array.from(Array(5)).map((_, index) => (
-              <select key={index} onChange={event => handleQuestionChange(event, index)}>
-                <option value="">Select difficulty {index + 1} question</option>
+              <select className='btn btn-outline-light' key={index} onChange={event => handleQuestionChange(event, index)}>
+                <option className='option-bg-color' value="">Select difficulty {index + 1} question</option>
                 {questionsByDifficulty[index + 1]?.map(question => (
-                  <option key={question.id} value={JSON.stringify(question)}>
+                  <option className='option-bg-color' key={question.id} value={JSON.stringify(question)}>
                     {question.question}
                   </option>
                 ))}
               </select>
             ))}
-            <select value={selectedColumn} onChange={handleColumnChange}>
-              <option value="">Select a column</option>
+            <select className='btn btn-outline-light' value={selectedColumn} onChange={handleColumnChange}>
+              <option className='option-bg-color' value="">Select a column</option>
               {Array.from(Array(6)).map((_, index) => (
-                <option key={index} value={index + 1}>
-                  Column: {index + 1}
+                <option className='option-bg-color' key={index} value={index + 1}>
+                  {index + 1}
                 </option>
               ))}
             </select>
-            <button onClick={SetIndividualGridColumn}>Set Grid Values</button>
+            <button className='btn btn-outline-light' onClick={SetIndividualGridColumn}>Set Grid Values</button>
 
-            <button onClick={() => navigate("/editQuestions")}>Go to Edit Page</button>
-            <div>
-              <button onClick={joinRoom}>Test join room</button>
-        <input
-            type="text"
-            value={roomCodeInput}
-            onChange={(e) => setRoomCodeInput(e.target.value)}
-        />
-        <button onClick={checkRooms}>Check Rooms</button>
-            </div>
+            <button className='btn btn-outline-light' onClick={() => navigate("/editQuestions")}>Go to Edit Page</button>
           </div>
         </div>
       </div>
