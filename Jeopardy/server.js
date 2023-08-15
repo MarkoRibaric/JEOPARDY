@@ -345,18 +345,39 @@ app.post('/api/addToDatabase', (req, res) => {
 
 app.delete("/api/deleteItem/:id", (req, res) => {
   const itemId = req.params.id;
+  const token = req.headers.authorization; // Extract the token from the request headers
 
-  const deleteQuery = "DELETE FROM questions WHERE id = ?";
-  db.run(deleteQuery, itemId, function (err) {
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized: Token not provided' });
+    return;
+  }
+
+  const tokenWithoutBearer = token.replace("Bearer ", "");
+  jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
-      console.error(err.message);
-      res.status(500).json({ error: "Failed to delete the item" });
-    } else {
-      console.log(`Deleted item with ID: ${itemId}`);
-      res.json({ message: "Item deleted successfully" });
+      console.error('Error verifying token:', err);
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
     }
+
+    const userId = decoded.userId;
+    const deleteQuery = "DELETE FROM questions WHERE id = ? AND user = ?";
+    db.run(deleteQuery, [itemId, userId], function (err) {
+      if (err) {
+        console.error(err.message);
+        res.status(500).json({ error: "Failed to delete the item" });
+      } else {
+        if (this.changes === 0) {
+          res.status(403).json({ error: "Unauthorized: Item not found or you are not authorized to delete it" });
+        } else {
+          console.log(`Deleted item with ID: ${itemId}`);
+          res.json({ message: "Item deleted successfully" });
+        }
+      }
+    });
   });
 });
+
 
 
 app.get('/api/themes', (req, res) => {
@@ -568,6 +589,8 @@ server.listen(5000, () => {
 });
 
 const roomInfo = new Map();
+const roomInfoScores = new Map();
+const currentRooms = [];
 
 io.on('connection', (socket) => {
   console.log('a user connected');
@@ -581,21 +604,27 @@ io.on('connection', (socket) => {
   });
   socket.on('CreateRoom', (data) => {
     console.log(`New user joined ${data.roomCode}`);
+    currentRooms.push(data.roomCode);
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
     socket.BoardID = data.BoardID;
     roomInfo[data.roomCode] = createTeamsArray(data.numberofteams);
+    roomInfoScores[data.roomCode] = createTeamsArray(data.numberofteams);
     roomCreator = true;
   });
   function createTeamsArray(numberOfTeams) {
     const teamsArray = [];
     for (let i = 0; i < numberOfTeams; i++) {
-      // Initialize each team as an empty array, you can add any default data as needed
       teamsArray.push([]);
     }
     return teamsArray;
   };
+
+  socket.on('GetCurrentRooms', () => {
+    socket.emit('CurrentRoomsList', currentRooms);
+  });
+
 
   socket.on('getTeams', () => {
     console.log(`Teams: ${socket.roomCode} ${roomInfo[socket.roomCode]}`)
@@ -677,40 +706,38 @@ io.on('connection', (socket) => {
     db.get('SELECT data FROM boards WHERE id = ?', [BoardID], (err, row) => {
       if (err) {
         console.error(err.message);
-        callback([]); // Return an empty array in case of an error
+        callback([]);
         return;
       }
   
       if (!row) {
         console.log(`Board with ID ${BoardID} not found`);
-        callback([]); // Return an empty array if the board is not found
+        callback([]);
         return;
       }
   
       const data = JSON.parse(row.data);
       const themes = data.map(array => array[0][0]);
-      callback(themes); // Pass the themes to the callback function
+      callback(themes);
     });}
 
     function getQuestionAnswer(q, rowIndex, columnIndex, BoardID, callback) {
       db.get('SELECT data FROM boards WHERE id = ?', [BoardID], (err, row) => {
         if (err) {
           console.error(err.message);
-          callback([]); // Return an empty array in case of an error
+          callback([]);
           return;
         }
         if (!row) {
           console.log(`Board with ID ${BoardID} not found`);
-          callback([]); // Return an empty array if the board is not found
+          callback([]);
           return;
         }
         console.log(columnIndex);
         console.log(rowIndex);
         const data = JSON.parse(row.data);
         const question_answer = data[columnIndex][rowIndex+1][q]
-
-
-        callback(question_answer); // Pass the themes to the callback function
+        callback(question_answer);
       });}
   
 });

@@ -3,6 +3,7 @@ import './login.css';
 import { Form, Input, Button, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
+import { Toast } from 'react-bootstrap';
 
 export default function Login(props) {
     const navigate = useNavigate();
@@ -18,11 +19,10 @@ export default function Login(props) {
             .then(response => response.json())
             .then(data => {
                 if (data.validation) {
-                    navigate('/gameboard');
-                    alert('Your password is correct');
                     const userId = data.userId;
                     const token = data.token;
                     props.handleGoToIndexPage(username, userId, token);
+                    navigate('/gameboard');
                 } else {
                     alert('Your password is incorrect');
                 }
@@ -44,8 +44,8 @@ export default function Login(props) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Registration successful');
                 } else {
+                    
                     alert('Registration failed');
                 }
             })

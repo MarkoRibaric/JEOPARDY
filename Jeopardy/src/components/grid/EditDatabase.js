@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Button, Nav, NavDropdown, Table } from "react-bootstrap";
+import { Form, useNavigate } from "react-router-dom";
+import './database.css';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faArrowsRotate, faPlus } from "@fortawesome/free-solid-svg-icons";
+
 
 function TextEntry({ value, onChange }) {
   const handleInputChange = (event) => {
     onChange(event.target.value);
   };
 
-  return <input type="text" value={value} onChange={handleInputChange} />;
+  return <input className="rounded-1 border-0" type="text" value={value} onChange={handleInputChange} />;
 }
 
 export default function EditDatabase(props) {
@@ -114,6 +119,9 @@ export default function EditDatabase(props) {
       return;
     }
     fetch(`http://localhost:5000/api/deleteItem/${itemId}`, {
+      headers: {
+        "Authorization": `Bearer ${props.token}`
+      },
       method: "DELETE",
     })
       .then((response) => response.json())
@@ -129,33 +137,44 @@ export default function EditDatabase(props) {
   return (
     <>
     <div>
-            Logged in user: {props.user} {props.id}
-          </div>
-      <div>
-        <button onClick={() => navigate("/gameBoard")}>Go to configuration page</button>
-        <button onClick={handleRefresh}>Refresh Database</button>
-      </div>
+      <Nav className="mb-4 bg-dark p-2 d-flex align-items-center gap-3" activeKey="1">
+        
+        <Button variant="outline-light text-nowrap"  onClick={() => navigate("/gameBoard")}><FontAwesomeIcon icon={faArrowLeft} /></Button>
+        <Button variant="outline-light text-nowrap" onClick={handleRefresh}><FontAwesomeIcon icon={faArrowsRotate} /> Refresh database</Button>
+
+
+      </Nav>
+    </div>
 
       <div>
-        <strong>Theme:</strong>
+        
+      </div>
+
+      <div className="text-white p-4 adding-Form">
+        <div className="d-flex gap-2 mb-2">
+        <span className="fw-bold fs-4">Theme:</span>
         <TextEntry value={themeEntry} onChange={handleThemeEntryChange} />
-      </div>
-
-      <div>
-        <ul style={{ marginTop: "10px" }}>
+        </div>
+        <div>
           {qaEntries.map((entry, index) => (
-            <li key={index}>
-              <strong>Question:</strong>
-              <TextEntry
+            <div key={index} className="d-flex gap-3 mb-1">
+              <div className="d-flex gap-2">
+                <span className="fw-bold">Question:</span>
+                <TextEntry
                 value={entry.question}
                 onChange={(value) => handleQAEntryChange(index, "question", value)}
               />
-              <strong>Answer:</strong>
+              </div>
+              
+              <div className="d-flex gap-2">
+              <span className="fw-bold">Answer:</span>
               <TextEntry
                 value={entry.answer}
                 onChange={(value) => handleQAEntryChange(index, "answer", value)}
               />
-              <strong>Difficulty:</strong>
+              </div>
+              <div className="d-flex gap-2">
+              <span className="fw-bold">Difficulty:</span>
               <select
                 value={entry.difficulty}
                 onChange={(event) => handleDifficultyChange(index, event.target.value)}
@@ -166,30 +185,49 @@ export default function EditDatabase(props) {
                 <option value={4}>4</option>
                 <option value={5}>5</option>
               </select>
-            </li>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
+        <div style={{ marginTop: "20px" }}>
+        <Button variant="outline-light text-nowrap" onClick={handleAddToDatabase}><FontAwesomeIcon icon={faPlus} /> Add to database</Button>
+      </div>
       </div>
 
-      <div style={{ marginTop: '20px', maxHeight: '200px', overflowY: 'scroll' }}>
-        <ul>
-          {data.questions.map((item) => (
-            <li key={item.id}>
-              <strong>Theme:</strong> {data.themes[item.theme_id - 1].theme} &nbsp;&nbsp;&nbsp;&nbsp;
-              <strong>Question:</strong> {item.question} &nbsp;&nbsp;&nbsp;&nbsp;
-              <strong>Answer:</strong> {item.answer} &nbsp;&nbsp;&nbsp;&nbsp;
-              <strong>Difficulty:</strong> {item.difficulty}
-              <strong>User:</strong> {item.user}
-              {item.user === props.id && (
-                <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
-              )}
-            </li>
-          ))}
-        </ul>
+      <div style={{ marginTop: '20px', maxHeight: '400px', overflowY: 'scroll' }}>
+      <Table responsive variant='dark' bordered>
+      <thead>
+      <tr>
+          <th>Theme</th>
+          <th>Question</th>
+          <th>Answer</th>
+          <th>Difficulty</th>
+          <th>Delete Item</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.questions.toReversed().map((item, rowIndex) => (
+          <tr key={item.id}>
+            <td>{data.themes[item.theme_id - 1].theme}</td>
+            <td>{item.question}</td>
+            <td>{item.answer}</td>
+            <td>{item.difficulty}</td>
+
+
+            
+            {item.user === props.id ? (
+            <td>
+            <button className='btn btn-outline-danger' onClick={() => handleDeleteItem(item.id)}>Delete</button>
+            </td>
+            ) : (
+              <td></td> 
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </Table>
       </div>
-      <div style={{ marginTop: "20px" }}>
-        <button onClick={handleAddToDatabase}>Add to database</button>
-      </div>
+      
     </>
   );
 }

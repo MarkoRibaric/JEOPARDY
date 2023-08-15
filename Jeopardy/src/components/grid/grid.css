@@ -69,18 +69,18 @@ tr:first-child th{
   color: white; /* White text color */
   font-weight: bold;
   border-color: white;
-  
   background-color: #0F4D92;
 }
 
 thead{
   border: 1px solid white;
+  font-size: large;
+  text-align: center;
 }
 tr:first-child td{
   border-bottom: 1px solid white;
   text-transform: uppercase;
   font-size: large;
-  
 }
 
 

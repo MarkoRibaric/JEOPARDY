@@ -326,6 +326,7 @@ export default function GameConfigurationGrid(props) {
     function generateRandomString() {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const randomString = Array.from({ length: 5 }, () => characters[Math.floor(Math.random() * characters.length)]);
+        
         return randomString.join('');
     }
 
@@ -368,7 +369,7 @@ export default function GameConfigurationGrid(props) {
     </Nav>
       <div className="top-container">
         <div className='d-flex gap-2 ms-4'>
-          <input type="text" value={name} onChange={event => setName(event.target.value)} />
+          <input type="text" value={name} placeholder="New Room Name" onChange={event => setName(event.target.value)} />
           <button className='btn btn-outline-light' onClick={() => handleSaveGame(0)}>Save New Game</button>
         <select className='btn btn-outline-light' value={selectedBoard?.id != null ? selectedBoard.id : ''} onChange={handleBoardChange}>
           <option className='option-bg-color' value="">Select a board</option>
@@ -408,7 +409,6 @@ export default function GameConfigurationGrid(props) {
                   ))}
               </tbody>
             </Table>
-
         </div>
         <div className="sidebar-container">
           <div className="select-container">
