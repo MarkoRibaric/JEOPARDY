@@ -4,7 +4,7 @@ import { socket } from '../../socket';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Nav, Table } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faArrowLeft, faArrowUp, faChevronDown, faChevronUp, faPlay } from '@fortawesome/free-solid-svg-icons';
 
 export default function PlayGrid(props) {
   const [clickedCell, setClickedCell] = useState(null);
@@ -119,8 +119,14 @@ export default function PlayGrid(props) {
     return teamName;
   }
 
-  function addPoints(teamIndex){
-    socket.emit('adjustScore', lastSelectedScore.current, teamIndex);
+  function addPoints(teamIndex, q){
+    if(q==0){
+      socket.emit('adjustScore', lastSelectedScore.current, teamIndex);
+    }
+    else{
+      socket.emit('adjustScore', -lastSelectedScore.current, teamIndex);
+    }
+    
     debugger;
   }
 
@@ -175,23 +181,29 @@ export default function PlayGrid(props) {
           <div className="overlay" onClick={handleOverlay3Click}>{currentShownValue}</div>
         )}
       </div>
-      <div className='d-flex gap-3 p-4'>
+      <div className='d-flex gap-3 p-4 justify-content-center'>
       {teams.map((team, index) => (
-        <div className='d-flex gap-2 flex-column team-members' key={index}>
-          <span onClick={() => addPoints(index)} className='text-white fw-bold'>{generateTeamName(index)}</span>
-          <span>{teamsScores[index]}</span>
-          {team.map((member, index) => (<span className='d-flex flex-column text-white' key={index}>{member}</span>))}
+        <div className='d-flex gap-2 flex-column team-members ' key={index}>
+          <span className='text-white fw-bold align-self-center'>{generateTeamName(index)}</span>
+          <Button variant="outline-light text-nowrap"
+              onClick={() => addPoints(index, 0)}
+          > <FontAwesomeIcon icon={faChevronUp}></FontAwesomeIcon> </Button>
+          <span className='d-flex flex-column text-white align-self-center'>{teamsScores[index]}</span>
+          
+          <Button variant="outline-light text-nowrap"
+              onClick={() => addPoints(index, 1)}
+          ><FontAwesomeIcon icon={faChevronDown}></FontAwesomeIcon></Button>
           {!selectedTeam && (
-            <Button variant="outline-light text-nowrap"
-              onClick={() => {
-                setSelectedTeam(true);
-                socket.emit('joinTeam', index, username);
-              }}
-            >
-              Join team
-            </Button>
-            
+          <Button variant="outline-light text-nowrap"
+            onClick={() => {
+              setSelectedTeam(true);
+              socket.emit('joinTeam', index, username);
+            }}
+          >
+            Join team
+          </Button>
           )}
+          {team.map((member, index) => (<span className='d-flex flex-column text-white align-self-center' key={index}>{member}</span>))}
         </div>
       ))}
       </div>
