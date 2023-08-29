@@ -16,12 +16,7 @@ export default function GameConfigurationGrid(props) {
   const [selectedBoard, setSelectedBoard] = useState('');
   const [boardData, setBoardData] = useState(Array.from(Array(6), () => Array(6).fill("")));
   const [questionsByDifficulty, setQuestionsByDifficulty] = useState({
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-    5: []
-  });
+    1: [], 2: [], 3: [], 4: [], 5: []});
 
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const navigate = useNavigate();
@@ -93,17 +88,14 @@ export default function GameConfigurationGrid(props) {
 
   function handleQuestionChange(event, index) {
     const selectedValue = event.target.value;
-
     if (selectedValue === "") {
       const updatedSelectedQuestions = [...selectedQuestions];
       updatedSelectedQuestions[index] = null;
       setSelectedQuestions(updatedSelectedQuestions);
       return;
     }
-
     try {
       const selectedQuestion = JSON.parse(selectedValue);
-
       const updatedSelectedQuestions = [...selectedQuestions];
       updatedSelectedQuestions[index] = selectedQuestion;
       setSelectedQuestions(updatedSelectedQuestions);
@@ -133,7 +125,6 @@ export default function GameConfigurationGrid(props) {
           return updatedGridValues;
         });
       });
-
   }
 
   function SetIndividualGridColumn() {
@@ -190,7 +181,6 @@ export default function GameConfigurationGrid(props) {
   }
 
   function SaveData(id, token, name, gridValues) {
-    
     const backendUrl = "http://localhost:5000/saveboard";
     fetch(backendUrl, {
       method: "POST",
@@ -202,7 +192,7 @@ export default function GameConfigurationGrid(props) {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data); // Success response from the backend
+        console.log(data);
       })
       .catch(error => {
         console.error("Error saving data:", error);
@@ -255,7 +245,6 @@ export default function GameConfigurationGrid(props) {
 
   function handleBoardChange(event) {
     const selectedBoardId = event.target.value;
-    console.log(selectedBoardId)
     const selectedBoardInformation = BoardInformation.find(board => parseInt(board.id) === parseInt(selectedBoardId));
     setSelectedBoard(selectedBoardInformation);
   }
@@ -326,7 +315,6 @@ export default function GameConfigurationGrid(props) {
     function generateRandomString() {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const randomString = Array.from({ length: 5 }, () => characters[Math.floor(Math.random() * characters.length)]);
-        
         return randomString.join('');
     }
 
@@ -439,7 +427,6 @@ export default function GameConfigurationGrid(props) {
               ))}
             </select>
             <button className='btn btn-outline-light' onClick={SetIndividualGridColumn}>Set Grid Values</button>
-
             <button className='btn btn-outline-light' onClick={() => navigate("/editQuestions")}>Go to Edit Page</button>
           </div>
         </div>

@@ -58,6 +58,7 @@ export default function PlayGrid(props) {
     });
     socket.on('displayOverlay', (rowIndex, columnIndex) => {
       setClickedCell(prevState => ({ row: rowIndex, column: columnIndex }));
+      setDisableQuestion(dc => [...dc, rowIndex+"_"+columnIndex]);
       console.log(clickedCell);
       setOverlay1Visible(true);
     });
@@ -134,7 +135,7 @@ export default function PlayGrid(props) {
                     className={`cell ${overlay1Visible ?  'selected' : ''} ${disableQuestion.includes(rowIndex+"_"+columnIndex) ? 'disabled' : ''}`}
                     onClick={() => {
                       socket.emit('overlayClicked', rowIndex, columnIndex);
-                      setDisableQuestion([...disableQuestion, rowIndex+"_"+columnIndex]);
+
                     }}
                   >
                     <div>

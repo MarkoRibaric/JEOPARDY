@@ -69,8 +69,6 @@ export default function EditDatabase(props) {
 
 
   const handleAddToDatabase = () => {
-    console.log("test");
-    console.log(props.token);
     if (themeEntry === "") {
       console.log("Theme field is required");
       return;
@@ -138,11 +136,8 @@ export default function EditDatabase(props) {
     <>
     <div>
       <Nav className="mb-4 bg-dark p-2 d-flex align-items-center gap-3" activeKey="1">
-        
         <Button variant="outline-light text-nowrap"  onClick={() => navigate("/gameBoard")}><FontAwesomeIcon icon={faArrowLeft} /></Button>
         <Button variant="outline-light text-nowrap" onClick={handleRefresh}><FontAwesomeIcon icon={faArrowsRotate} /> Refresh database</Button>
-
-
       </Nav>
     </div>
 
@@ -212,9 +207,6 @@ export default function EditDatabase(props) {
             <td>{item.question}</td>
             <td>{item.answer}</td>
             <td>{item.difficulty}</td>
-
-
-            
             {item.user === props.id ? (
             <td>
             <button className='btn btn-outline-danger' onClick={() => handleDeleteItem(item.id)}>Delete</button>

@@ -36,7 +36,7 @@ let sentThemes = {};
 
 app.post('/validatePassword', (req, res) => {
   let { username, password } = req.body;
-  username = username.toLowerCase(); // Convert username to lowercase
+  username = username.toLowerCase();
 
   db.get(`SELECT id, password FROM users WHERE LOWER(username) = ?`, [username], (err, row) => {
     if (err) {
@@ -44,10 +44,9 @@ app.post('/validatePassword', (req, res) => {
       res.status(500).send({ validation: false, error: 'Internal Server Error' });
       return;
     }
-
     if (row) {
       const storedPassword = row.password;
-      const userId = row.id; // Retrieve the user ID from the row
+      const userId = row.id;
 
       bcrypt.compare(password, storedPassword, (compareErr, isMatch) => {
         if (compareErr) {
@@ -138,11 +137,11 @@ app.get("/randomcolumn", (req, res) => {
     console.log(gottenthemes);
     const themeNames = gottenthemes.map(theme => `'${theme[0]}'`).join(', ');
     db.get(`
-      SELECT t.id, t.theme
+      SELECT t.id, t.theme 
       FROM themes t
       JOIN questions q ON t.id = q.theme_id
       WHERE t.theme NOT IN (${themeNames})
-        AND (q.user = ? OR q.user IS NULL)
+      AND (q.user = ? OR q.user IS NULL)
       GROUP BY t.id, t.theme
       HAVING COUNT(DISTINCT q.difficulty) >= 5
       ORDER BY RANDOM()
@@ -250,8 +249,8 @@ app.get('/api/all', (req, res) => {
     questions: []
   };
 
-  const token = req.headers.authorization; // Extract the token from the request headers
-  const tokenWithoutBearer = token.replace("Bearer ", ""); // Remove the "Bearer " prefix
+  const token = req.headers.authorization;
+  const tokenWithoutBearer = token.replace("Bearer ", "");
 
   jwt.verify(tokenWithoutBearer, secretKey, (err, decoded) => {
     if (err) {
@@ -260,7 +259,7 @@ app.get('/api/all', (req, res) => {
       return;
     }
 
-    const userId = decoded.userId; // Retrieve the user ID from the decoded token
+    const userId = decoded.userId;
     console.log(userId)
     db.all('SELECT * FROM themes', (err, themeRows) => {
       if (err) {
@@ -320,10 +319,10 @@ app.post('/api/addToDatabase', (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
             return;
           }
-          insertQuestions(this.lastID, entries, userId); // Insert the questions into the questions table
+          insertQuestions(this.lastID, entries, userId);
         });
       } else {
-        insertQuestions(row.id, entries, userId); // Insert the questions into the questions table
+        insertQuestions(row.id, entries, userId); 
       }
     });
   });
@@ -574,7 +573,7 @@ app.delete('/api/boards/:id', (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
         return;
       }
-      res.status(204).send(); // No content
+      res.status(204).send();
     });
   });
 });
@@ -605,6 +604,7 @@ io.on('connection', (socket) => {
   socket.on('CreateRoom', (data) => {
     console.log(`New user joined ${data.roomCode}`);
     currentRooms.push(data.roomCode);
+    console.log()
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
@@ -612,6 +612,7 @@ io.on('connection', (socket) => {
     roomInfo[data.roomCode] = createTeamsArray(data.numberofteams);
     roomInfoScores[data.roomCode] = createTeamsArray(data.numberofteams);
     roomCreator = true;
+    console.log(io.sockets.adapter.rooms)
   });
   function createTeamsArray(numberOfTeams) {
     const teamsArray = [];
@@ -649,10 +650,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('CheckRooms', () => {
-    const rooms = io.sockets.adapter.rooms;
-    console.log(rooms);
-    const roomList = [];
-    socket.emit('RoomList', roomList);
+    console.log(currentRooms);
+    socket.emit('RoomList', currentRooms);
   });
 
   socket.on('overlayClicked', (row, column) => {
