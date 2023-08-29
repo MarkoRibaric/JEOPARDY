@@ -589,7 +589,13 @@ server.listen(5000, () => {
 
 const roomInfo = new Map();
 const roomInfoScores = new Map();
-const currentRooms = [];
+const currentRooms = [{
+   Name: "asdf",
+   Score: {
+    Team1: 2
+   },
+   SelectedFields: []
+}];
 
 io.on('connection', (socket) => {
   console.log('a user connected');
@@ -599,7 +605,13 @@ io.on('connection', (socket) => {
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
-    io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode]);
+    if (roomInfo[data.roomCode]) {
+      io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode].teams);
+      io.to(data.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores)
+      console.log(roomInfo);
+      io.to(data.roomCode).emit('answeredQuestions', roomInfo[socket.roomCode].answeredQuestion)
+    }
+
   });
   socket.on('CreateRoom', (data) => {
     console.log(`New user joined ${data.roomCode}`);
@@ -609,9 +621,11 @@ io.on('connection', (socket) => {
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
     socket.BoardID = data.BoardID;
-    roomInfo[data.roomCode] = createTeamsArray(data.numberofteams);
-    roomInfoScores[data.roomCode] = createTeamsArray(data.numberofteams);
+    roomInfo[data.roomCode] = new RoomInfo(data.roomCode, createTeamsArray(data.numberofteams), createScoresArray(data.numberofteams), []);
     roomCreator = true;
+    io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode].teams);
+    io.to(data.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores)
+    io.to(data.roomCode).emit('answeredQuestions', roomInfo[socket.roomCode].answeredQuestion)
     console.log(io.sockets.adapter.rooms)
   });
   function createTeamsArray(numberOfTeams) {
@@ -621,6 +635,13 @@ io.on('connection', (socket) => {
     }
     return teamsArray;
   };
+  function createScoresArray(numberOfTeams) {
+    const scoresArray = [];
+    for (let i = 0; i < numberOfTeams; i++) {
+      scoresArray.push(0);
+    }
+    return scoresArray;
+  };
 
   socket.on('GetCurrentRooms', () => {
     socket.emit('CurrentRoomsList', currentRooms);
@@ -628,15 +649,16 @@ io.on('connection', (socket) => {
 
 
   socket.on('getTeams', () => {
-    console.log(`Teams: ${socket.roomCode} ${roomInfo[socket.roomCode]}`)
-    console.log(roomInfo);
-    socket.emit('Teams', roomInfo[socket.roomCode]);
+    if (roomInfo[socket.roomCode]) {
+      socket.emit('Teams', roomInfo[socket.roomCode].teams);
+
+    }
   });
 
   socket.on('joinTeam', (teamIndex, userName) => {
-    roomInfo[socket.roomCode][teamIndex].push(userName);
+    roomInfo[socket.roomCode].teams[teamIndex].push(userName);
     console.log(roomInfo[socket.roomCode])
-    io.to(socket.roomCode).emit('Teams', roomInfo[socket.roomCode]);
+    io.to(socket.roomCode).emit('Teams', roomInfo[socket.roomCode].teams);
   });
   
 
@@ -662,6 +684,7 @@ io.on('connection', (socket) => {
     } else {
       console.log('Only the room creator can trigger this action.');
     }
+    roomInfo[socket.roomCode].answeredQuestion.push(row+"_"+column);
   });
   socket.on('overlayClicked2', (row, column) => {
     if (roomCreator) {
@@ -690,7 +713,14 @@ io.on('connection', (socket) => {
       console.log('Only the room creator can trigger this action.');
     }
   });
-  socket.on('startGame', () => {
+  socket.on('adjustScore', (score, teamIndex) => {
+    roomInfo[socket.roomCode].scores[teamIndex] += score;
+    io.to(socket.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores);
+  });
+
+
+
+  socket.on('setThemes', () => {
     if (roomCreator) {
       getThemes(socket.BoardID, (themes) => {
         console.log(themes);
@@ -740,3 +770,12 @@ io.on('connection', (socket) => {
       });}
   
 });
+
+class RoomInfo {
+  constructor(name, teams, scores, answeredQuestion) {
+    this.name = name;
+    this.teams = teams;
+    this.scores = scores;
+    this.answeredQuestion = answeredQuestion;
+  }
+} 
