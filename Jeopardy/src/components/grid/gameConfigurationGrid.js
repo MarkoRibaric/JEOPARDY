@@ -318,7 +318,6 @@ export default function GameConfigurationGrid(props) {
         return randomString.join('');
     }
 
-
     const createNewRoom = (numberteams) => {
       if(selectedBoard != ""){
         const roomCode = generateRandomString();

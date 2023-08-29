@@ -41,7 +41,7 @@ export default function PlayGrid(props) {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     socket.emit('GetRoomName');
-    socket.emit('startGame')
+    socket.emit('getThemes')
     socket.on('RoomName', (roomName) => {
       if (!roomName) {
         const roomCodeInput = roomCodeGuest.roomCode;
@@ -90,6 +90,9 @@ export default function PlayGrid(props) {
       console.log(questions);
       setDisableQuestion(questions);
     })
+    socket.on('updateThemes', (recievedthemes) => {
+      setThemes(recievedthemes);
+    })
     
     return () => {
       socket.off('Teams');
@@ -100,6 +103,7 @@ export default function PlayGrid(props) {
       socket.off('startGame');
       socket.off('updateScores');
       socket.off('answeredQuestions');
+      socket.off('updateThemes');
     };
   }, []);
 

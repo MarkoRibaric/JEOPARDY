@@ -605,11 +605,15 @@ io.on('connection', (socket) => {
     socket.join(data.roomCode);
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
+    socket.BoardID = data.BoardID;
     if (roomInfo[data.roomCode]) {
       io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode].teams);
       io.to(data.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores)
       console.log(roomInfo);
       io.to(data.roomCode).emit('answeredQuestions', roomInfo[socket.roomCode].answeredQuestion)
+      console.log(socket.BoardID);
+      io.to(data.roomCode).emit('updateThemes', roomInfo[socket.roomCode].themes);
+
     }
 
   });
@@ -621,12 +625,17 @@ io.on('connection', (socket) => {
     io.to(data.roomCode).emit("UserJoin", `New user joined ${data.roomCode}`);
     socket.roomCode = data.roomCode;
     socket.BoardID = data.BoardID;
-    roomInfo[data.roomCode] = new RoomInfo(data.roomCode, createTeamsArray(data.numberofteams), createScoresArray(data.numberofteams), []);
+    roomInfo[data.roomCode] = new RoomInfo(data.roomCode, createTeamsArray(data.numberofteams), createScoresArray(data.numberofteams), [], []);
+    getThemes(socket.BoardID, (themes) => {
+      roomInfo[socket.roomCode].themes = themes;
+      io.to(socket.roomCode).emit('updateThemes', themes);
+    });
     roomCreator = true;
     io.to(data.roomCode).emit('Teams', roomInfo[socket.roomCode].teams);
     io.to(data.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores)
     io.to(data.roomCode).emit('answeredQuestions', roomInfo[socket.roomCode].answeredQuestion)
     console.log(io.sockets.adapter.rooms)
+    
   });
   function createTeamsArray(numberOfTeams) {
     const teamsArray = [];
@@ -651,7 +660,6 @@ io.on('connection', (socket) => {
   socket.on('getTeams', () => {
     if (roomInfo[socket.roomCode]) {
       socket.emit('Teams', roomInfo[socket.roomCode].teams);
-
     }
   });
 
@@ -772,10 +780,11 @@ io.on('connection', (socket) => {
 });
 
 class RoomInfo {
-  constructor(name, teams, scores, answeredQuestion) {
+  constructor(name, teams, scores, answeredQuestion, themes) {
     this.name = name;
     this.teams = teams;
     this.scores = scores;
     this.answeredQuestion = answeredQuestion;
+    this.themes = themes;
   }
 } 
