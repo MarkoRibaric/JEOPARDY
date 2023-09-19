@@ -1,0 +1,9 @@
+  tr:first-child td{
+    border-bottom: 0px;
+    text-transform: none;
+    font-size: initial;
+  }
+
+  .adding-Form{
+    width: 800px;
+  }

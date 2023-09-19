@@ -126,6 +126,8 @@ export default function PlayGrid(props) {
     else{
       socket.emit('adjustScore', -lastSelectedScore.current, teamIndex);
     }
+    
+    debugger;
   }
 
   return (

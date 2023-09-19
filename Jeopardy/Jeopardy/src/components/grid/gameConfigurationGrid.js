@@ -271,7 +271,6 @@ export default function GameConfigurationGrid(props) {
 
   
     const joinRoom = () => {
-
         socket.emit('JoinRoom', {
             roomCode: roomCodeInput
         });
