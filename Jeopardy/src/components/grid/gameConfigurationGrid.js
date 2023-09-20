@@ -169,6 +169,9 @@ export default function GameConfigurationGrid(props) {
             console.error('Error fetching board data:', error);
           });
       }
+      else{
+        alert("You have to give a name to the board!")
+      }
       
     }
     else if (savetype === 1 && selectedBoard && selectedBoard.id !== null) {
@@ -178,6 +181,7 @@ export default function GameConfigurationGrid(props) {
       console.log(boardData);
       SaveData(selectedBoard.id, props.token, selectedBoard.boardname, boardData);
     }
+    
   }
 
   function SaveData(id, token, name, gridValues) {
@@ -271,12 +275,17 @@ export default function GameConfigurationGrid(props) {
 
   
     const joinRoom = () => {
-
+      if(roomCodeInput.length === 5){
         socket.emit('JoinRoom', {
-            roomCode: roomCodeInput
+          roomCode: roomCodeInput
         });
         navigate("/play/"+roomCodeInput);
+      }
+      else{
+        alert("The length of the room code has to be 5!")
+      }
     }
+
     
     const checkRooms = () => {
         socket.emit('CheckRooms');
@@ -328,6 +337,9 @@ export default function GameConfigurationGrid(props) {
             numberofteams: numberteams
         });
         navigate("/play/"+roomCode);
+      }
+      else{
+        alert("You have to pick a board");
       }
   }
 

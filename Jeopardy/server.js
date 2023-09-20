@@ -721,8 +721,11 @@ io.on('connection', (socket) => {
     }
   });
   socket.on('adjustScore', (score, teamIndex) => {
-    roomInfo[socket.roomCode].scores[teamIndex] += score;
-    io.to(socket.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores);
+    if(roomCreator){
+      roomInfo[socket.roomCode].scores[teamIndex] += score;
+      io.to(socket.roomCode).emit('updateScores', roomInfo[socket.roomCode].scores);
+    }
+    
   });
   socket.on('setThemes', () => {
     if (roomCreator) {
